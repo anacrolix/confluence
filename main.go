@@ -6,66 +6,20 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/httptoo"
-	"github.com/anacrolix/missinggo/refclose"
 	"github.com/anacrolix/tagflag"
 	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
+	"github.com/anacrolix/torrent/iplist"
 	"golang.org/x/net/context"
 )
 
-var (
-	tcReqCtxKey = new(struct{})
-	torrentKey  = new(struct{})
-	mux         = http.DefaultServeMux
-	torrentRefs refclose.RefPool
-)
-
-func init() {
-	mux.HandleFunc("/data", dataHandler)
-	mux.HandleFunc("/status", statusHandler)
-}
-
-type handler struct {
-	tc *torrent.Client
-}
-
 func getTorrentClientFromRequestContext(r *http.Request) *torrent.Client {
-	return r.Context().Value(tcReqCtxKey).(*torrent.Client)
-}
-
-func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r = r.WithContext(context.WithValue(r.Context(), torrentKey, h.tc))
-	mux.ServeHTTP(w, r)
-}
-
-func dataHandler(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	var ih metainfo.Hash
-	err := ih.FromHexString(q.Get("ih"))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	ref := torrentRefs.NewRef(ih)
-	tc := r.Context().Value(tcReqCtxKey).(*torrent.Client)
-	t, _ := tc.AddTorrentInfoHash(ih)
-	ref.SetCloser(t.Drop)
-	defer time.AfterFunc(time.Minute, ref.Release)
-	w.Header().Set("Content-Disposition", "inline")
-	if len(q["path"]) == 0 {
-		serveTorrent(w, r, t)
-	} else {
-		serveFile(w, r, t, q.Get("path"))
-	}
-}
-
-func statusHandler(w http.ResponseWriter, r *http.Request) {
-	getTorrentClientFromRequestContext(r).WriteStatus(w)
+	return r.Context().Value(torrentClientContextKey).(*torrent.Client)
 }
 
 func serveTorrent(w http.ResponseWriter, r *http.Request, t *torrent.Torrent) {
@@ -115,14 +69,30 @@ func serveFile(w http.ResponseWriter, r *http.Request, t *torrent.Torrent, _path
 	serveTorrentSection(w, r, t, tf.Offset(), tf.Length(), _path)
 }
 
-func main() {
-	tagflag.Parse(nil)
-	cl, err := torrent.NewClient(nil)
+func newTorrentClient() *torrent.Client {
+	blocklist, err := iplist.MMapPacked("packed-blocklist")
+	if err != nil {
+		log.Print(err)
+	}
+	cl, err := torrent.NewClient(&torrent.Config{
+		IPBlocklist: blocklist,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
+	return cl
+}
+
+func main() {
+	flags := struct {
+		Addr string
+	}{
+		Addr: "localhost:8080",
+	}
+	tagflag.Parse(&flags)
+	cl := newTorrentClient()
 	defer cl.Close()
-	l, err := net.Listen("tcp", ":8080")
+	l, err := net.Listen("tcp", flags.Addr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -155,3 +125,65 @@ func torrentFileByPath(t *torrent.Torrent, path_ string) *torrent.File {
 	}
 	return nil
 }
+
+func saveTorrentFile(t *torrent.Torrent) (err error) {
+	f, err := os.OpenFile(fmt.Sprintf("torrents/%s.torrent", t.InfoHash().HexString()), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	return t.Metainfo().Write(f)
+}
+
+// func fileEventHandler(w http.ResponseWriter, r *http.Request) {
+// 	q := r.URL.Query()
+// 	t := requestTorrent(r).Torrent
+// 	f := torrentFileByPath(t, q.Get("path"))
+// 	select {
+// 	case <-t.GotInfo():
+// 	default:
+// 		http.Error(w, "missing info", http.StatusServiceUnavailable)
+// 		return
+// 	}
+// 	pl := t.Info().PieceLength
+// 	firstPiece := int(f.Offset() / pl)
+// 	endPiece := int((f.Offset() + f.Length() + pl - 1) / pl)
+// 	s := t.SubscribePieceStateChanges()
+// 	defer s.Close()
+// 	transcoderEvent, err := getTranscoderEventEvent(r.Context())
+// 	if err != nil {
+// 		log.Printf("failed to subscribe to transcoder events: %s", err)
+// 	}
+// 	websocket.Handler(func(c *websocket.Conn) {
+// 		incFilePrefetch(f)
+// 		defer decFilePrefetch(f)
+// 		readClosed := make(chan struct{})
+// 		go func() {
+// 			io.Copy(ioutil.Discard, c)
+// 			close(readClosed)
+// 		}()
+// 		defer c.Close()
+// 		for {
+// 			select {
+// 			case _i := <-s.Values:
+// 				i := _i.(torrent.PieceStateChange).Index
+// 				if i < firstPiece || i >= endPiece {
+// 					break
+// 				}
+// 				if err := websocket.JSON.Send(c, fileEvent{PieceChanged: &i}); err != nil {
+// 					log.Printf("error writing json to websocket: %s", err)
+// 					return
+// 				}
+// 			case <-transcoderEvent.C():
+// 				// log.Printf("file event handler got transcoder event")
+// 				transcoderEvent.Clear()
+// 				if err := websocket.JSON.Send(c, fileEvent{PreviewProgress: &struct{}{}}); err != nil {
+// 					log.Printf("error writing json to websocket: %s", err)
+// 					return
+// 				}
+// 			case <-readClosed:
+// 				return
+// 			}
+// 		}
+// 	}).ServeHTTP(w, r)
+// }
