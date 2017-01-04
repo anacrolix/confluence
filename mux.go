@@ -8,4 +8,6 @@ func init() {
 	mux.HandleFunc("/data", dataHandler)
 	mux.HandleFunc("/status", statusHandler)
 	mux.HandleFunc("/info", infoHandler)
+	mux.HandleFunc("/events", eventHandler)
+	mux.HandleFunc("/fileState", fileStateHandler)
 }

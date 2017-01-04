@@ -1,23 +1,29 @@
 package main
 
 import (
+	"encoding/json"
+	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/torrent"
+	"golang.org/x/net/websocket"
+
+	"github.com/anacrolix/confluence/confluence"
 )
 
 func dataHandler(w http.ResponseWriter, r *http.Request) {
-	httptoo.WrapHandler(nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	httptoo.WrapHandler([]httptoo.Middleware{withTorrentContext}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
-		t := r.Context().Value(torrentContextKey).(*torrent.Torrent)
-		w.Header().Set("Content-Disposition", "inline")
+		t := torrentForRequest(r)
 		if len(q["path"]) == 0 {
 			serveTorrent(w, r, t)
 		} else {
 			serveFile(w, r, t, q.Get("path"))
 		}
-	}))
+	})).ServeHTTP(w, r)
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,4 +44,45 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write(mi.InfoBytes)
 		},
 	).ServeHTTP(w, r)
+}
+
+func eventHandler(w http.ResponseWriter, r *http.Request) {
+	httptoo.RunHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t := torrentForRequest(r)
+		select {
+		case <-t.GotInfo():
+		case <-r.Context().Done():
+			return
+		}
+		s := t.SubscribePieceStateChanges()
+		defer s.Close()
+		websocket.Handler(func(c *websocket.Conn) {
+			readClosed := make(chan struct{})
+			go func() {
+				io.Copy(ioutil.Discard, c)
+				close(readClosed)
+			}()
+			defer c.Close()
+			for {
+				select {
+				case _i := <-s.Values:
+					i := _i.(torrent.PieceStateChange).Index
+					if err := websocket.JSON.Send(c, confluence.Event{PieceChanged: &i}); err != nil {
+						log.Printf("error writing json to websocket: %s", err)
+						return
+					}
+				case <-readClosed:
+					return
+				}
+			}
+		}).ServeHTTP(w, r)
+	}, w, r, withTorrentContext)
+}
+
+func fileStateHandler(w http.ResponseWriter, r *http.Request) {
+	httptoo.RunHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path_ := r.URL.Query().Get("path")
+		f := torrentFileByPath(torrentForRequest(r), path_)
+		json.NewEncoder(w).Encode(f.State())
+	}, w, r, withTorrentContext)
 }

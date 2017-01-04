@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	_ "github.com/anacrolix/envpprof"
@@ -84,6 +85,7 @@ func newTorrentClient() *torrent.Client {
 }
 
 func main() {
+	log.SetFlags(log.Flags() | log.Lshortfile)
 	flags := struct {
 		Addr string
 	}{
@@ -127,63 +129,12 @@ func torrentFileByPath(t *torrent.Torrent, path_ string) *torrent.File {
 }
 
 func saveTorrentFile(t *torrent.Torrent) (err error) {
-	f, err := os.OpenFile(fmt.Sprintf("torrents/%s.torrent", t.InfoHash().HexString()), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	path_ := filepath.Join("torrents", t.InfoHash().HexString()+".torrent")
+	os.MkdirAll(filepath.Dir(path_), 0750)
+	f, err := os.OpenFile(path_, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
 	if err != nil {
 		return
 	}
 	defer f.Close()
 	return t.Metainfo().Write(f)
 }
-
-// func fileEventHandler(w http.ResponseWriter, r *http.Request) {
-// 	q := r.URL.Query()
-// 	t := requestTorrent(r).Torrent
-// 	f := torrentFileByPath(t, q.Get("path"))
-// 	select {
-// 	case <-t.GotInfo():
-// 	default:
-// 		http.Error(w, "missing info", http.StatusServiceUnavailable)
-// 		return
-// 	}
-// 	pl := t.Info().PieceLength
-// 	firstPiece := int(f.Offset() / pl)
-// 	endPiece := int((f.Offset() + f.Length() + pl - 1) / pl)
-// 	s := t.SubscribePieceStateChanges()
-// 	defer s.Close()
-// 	transcoderEvent, err := getTranscoderEventEvent(r.Context())
-// 	if err != nil {
-// 		log.Printf("failed to subscribe to transcoder events: %s", err)
-// 	}
-// 	websocket.Handler(func(c *websocket.Conn) {
-// 		incFilePrefetch(f)
-// 		defer decFilePrefetch(f)
-// 		readClosed := make(chan struct{})
-// 		go func() {
-// 			io.Copy(ioutil.Discard, c)
-// 			close(readClosed)
-// 		}()
-// 		defer c.Close()
-// 		for {
-// 			select {
-// 			case _i := <-s.Values:
-// 				i := _i.(torrent.PieceStateChange).Index
-// 				if i < firstPiece || i >= endPiece {
-// 					break
-// 				}
-// 				if err := websocket.JSON.Send(c, fileEvent{PieceChanged: &i}); err != nil {
-// 					log.Printf("error writing json to websocket: %s", err)
-// 					return
-// 				}
-// 			case <-transcoderEvent.C():
-// 				// log.Printf("file event handler got transcoder event")
-// 				transcoderEvent.Clear()
-// 				if err := websocket.JSON.Send(c, fileEvent{PreviewProgress: &struct{}{}}); err != nil {
-// 					log.Printf("error writing json to websocket: %s", err)
-// 					return
-// 				}
-// 			case <-readClosed:
-// 				return
-// 			}
-// 		}
-// 	}).ServeHTTP(w, r)
-// }
