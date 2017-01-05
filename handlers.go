@@ -2,8 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io"
-	"io/ioutil"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -60,22 +59,18 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		s := t.SubscribePieceStateChanges()
 		defer s.Close()
 		websocket.Handler(func(c *websocket.Conn) {
-			readClosed := make(chan struct{})
-			go func() {
-				io.Copy(ioutil.Discard, c)
-				close(readClosed)
-			}()
 			defer c.Close()
 			for {
 				select {
+				case <-r.Context().Done():
+					log.Printf("event handler request context done")
+					return
 				case _i := <-s.Values:
 					i := _i.(torrent.PieceStateChange).Index
 					if err := websocket.JSON.Send(c, confluence.Event{PieceChanged: &i}); err != nil {
 						log.Printf("error writing json to websocket: %s", err)
 						return
 					}
-				case <-readClosed:
-					return
 				}
 			}
 		}).ServeHTTP(w, r)
