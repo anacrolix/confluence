@@ -9,6 +9,9 @@ import (
 
 	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/bencode"
+	"github.com/anacrolix/torrent/metainfo"
+	"github.com/justinas/alice"
 	"golang.org/x/net/websocket"
 
 	"github.com/anacrolix/confluence/confluence"
@@ -86,3 +89,16 @@ func fileStateHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(f.State())
 	}, w, r, withTorrentContext)
 }
+
+var metainfoHandler = alice.New(withTorrentContext).ThenFunc(func(w http.ResponseWriter, r *http.Request) {
+	var mi metainfo.MetaInfo
+	err := bencode.NewDecoder(r.Body).Decode(&mi)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error decoding body: %s", err), http.StatusBadRequest)
+		return
+	}
+	t := torrentForRequest(r)
+	t.AddTrackers(mi.AnnounceList)
+	t.SetInfoBytes(mi.InfoBytes)
+	saveTorrentFile(t)
+})

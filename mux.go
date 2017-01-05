@@ -10,4 +10,5 @@ func init() {
 	mux.HandleFunc("/info", infoHandler)
 	mux.HandleFunc("/events", eventHandler)
 	mux.HandleFunc("/fileState", fileStateHandler)
+	mux.Handle("/metainfo", metainfoHandler)
 }
