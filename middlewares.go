@@ -40,7 +40,6 @@ func withTorrentContext(h http.Handler) http.Handler {
 func saveTorrentWhenGotInfo(t *torrent.Torrent) {
 	select {
 	case <-t.Closed():
-		return
 	case <-t.GotInfo():
 	}
 	err := saveTorrentFile(t)
