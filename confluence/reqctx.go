@@ -1,7 +1,6 @@
-package main
+package confluence
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/anacrolix/missinggo/refclose"
@@ -14,15 +13,6 @@ var (
 	torrentContextKey       = new(byte)
 	torrentRefs             refclose.RefPool
 )
-
-type handler struct {
-	tc *torrent.Client
-}
-
-func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r = r.WithContext(context.WithValue(r.Context(), torrentClientContextKey, h.tc))
-	mux.ServeHTTP(w, r)
-}
 
 func torrentClientForRequest(r *http.Request) *torrent.Client {
 	return r.Context().Value(torrentClientContextKey).(*torrent.Client)

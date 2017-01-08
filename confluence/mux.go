@@ -1,8 +1,8 @@
-package main
+package confluence
 
 import "net/http"
 
-var mux = http.DefaultServeMux
+var mux = http.NewServeMux()
 
 func init() {
 	mux.HandleFunc("/data", dataHandler)

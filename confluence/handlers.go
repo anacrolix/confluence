@@ -1,4 +1,4 @@
-package main
+package confluence
 
 import (
 	"encoding/json"
@@ -12,8 +12,6 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/justinas/alice"
 	"golang.org/x/net/websocket"
-
-	"github.com/anacrolix/confluence/confluence"
 )
 
 func dataHandler(w http.ResponseWriter, r *http.Request) {
@@ -58,30 +56,32 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		s := t.SubscribePieceStateChanges()
 		defer s.Close()
-		websocket.Handler(func(c *websocket.Conn) {
-			defer c.Close()
-			readClosed := make(chan struct{})
-			go func() {
-				defer close(readClosed)
-				c.Read(nil)
-			}()
-			for {
-				select {
-				case <-readClosed:
-					log.Printf("event handler websocket read closed")
-					return
-				case <-r.Context().Done():
-					log.Printf("event handler request context done")
-					return
-				case _i := <-s.Values:
-					i := _i.(torrent.PieceStateChange).Index
-					if err := websocket.JSON.Send(c, confluence.Event{PieceChanged: &i}); err != nil {
-						log.Printf("error writing json to websocket: %s", err)
+		websocket.Server{
+			Handler: func(c *websocket.Conn) {
+				defer c.Close()
+				readClosed := make(chan struct{})
+				go func() {
+					defer close(readClosed)
+					c.Read(nil)
+				}()
+				for {
+					select {
+					case <-readClosed:
+						log.Printf("event handler websocket read closed")
 						return
+					case <-r.Context().Done():
+						log.Printf("event handler request context done")
+						return
+					case _i := <-s.Values:
+						i := _i.(torrent.PieceStateChange).Index
+						if err := websocket.JSON.Send(c, Event{PieceChanged: &i}); err != nil {
+							log.Printf("error writing json to websocket: %s", err)
+							return
+						}
 					}
 				}
-			}
-		}).ServeHTTP(w, r)
+			},
+		}.ServeHTTP(w, r)
 	}, w, r, withTorrentContext)
 }
 
