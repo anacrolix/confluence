@@ -60,8 +60,16 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		defer s.Close()
 		websocket.Handler(func(c *websocket.Conn) {
 			defer c.Close()
+			readClosed := make(chan struct{})
+			go func() {
+				defer close(readClosed)
+				c.Read(nil)
+			}()
 			for {
 				select {
+				case <-readClosed:
+					log.Printf("event handler websocket read closed")
+					return
 				case <-r.Context().Done():
 					log.Printf("event handler request context done")
 					return
