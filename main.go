@@ -12,10 +12,12 @@ import (
 
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/filecache"
 	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/tagflag"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/iplist"
+	"github.com/anacrolix/torrent/storage"
 	"golang.org/x/net/context"
 )
 
@@ -75,8 +77,16 @@ func newTorrentClient() *torrent.Client {
 	if err != nil {
 		log.Print(err)
 	}
+	log.Printf("loaded %d blocklist ranges", blocklist.NumRanges())
+	fileCache, err := filecache.NewCache("filecache")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fileCache.SetCapacity(10 << 30)
+	storageProvider := fileCache.AsResourceProvider()
 	cl, err := torrent.NewClient(&torrent.Config{
-		IPBlocklist: blocklist,
+		IPBlocklist:    blocklist,
+		DefaultStorage: storage.NewResourcePieces(storageProvider),
 	})
 	if err != nil {
 		log.Fatal(err)
