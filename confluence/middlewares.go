@@ -22,16 +22,16 @@ func withTorrentContext(h http.Handler) http.Handler {
 			return
 		}
 		ref := torrentRefs.NewRef(ih)
-		tc := r.Context().Value(torrentClientContextKey).(*torrent.Client)
+		tc := torrentClientForRequest(r)
 		t, new := tc.AddTorrentInfoHash(ih)
 		ref.SetCloser(t.Drop)
 		defer time.AfterFunc(time.Minute, ref.Release)
-		mi := cachedMetaInfo(ih)
-		if mi != nil {
-			t.AddTrackers(mi.AnnounceList)
-			t.SetInfoBytes(mi.InfoBytes)
-		}
 		if new {
+			mi := cachedMetaInfo(ih)
+			if mi != nil {
+				t.AddTrackers(mi.AnnounceList)
+				t.SetInfoBytes(mi.InfoBytes)
+			}
 			go saveTorrentWhenGotInfo(t)
 		}
 		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), torrentContextKey, ref)))
