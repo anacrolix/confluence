@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -49,9 +50,13 @@ func saveTorrentWhenGotInfo(t *torrent.Torrent) {
 }
 
 func cachedMetaInfo(infoHash metainfo.Hash) *metainfo.MetaInfo {
-	mi, err := metainfo.LoadFromFile(fmt.Sprintf("torrents/%s.torrent", infoHash.HexString()))
-	if err == nil && mi.HashInfoBytes() == infoHash {
-		return mi
+	p := fmt.Sprintf("torrents/%s.torrent", infoHash.HexString())
+	mi, err := metainfo.LoadFromFile(p)
+	if os.IsNotExist(err) {
+		return nil
 	}
-	return nil
+	if err != nil {
+		log.Printf("error loading metainfo file %q: %s", p, err)
+	}
+	return mi
 }
