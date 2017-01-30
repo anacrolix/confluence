@@ -8,6 +8,7 @@ import (
 	"github.com/anacrolix/dht"
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/missinggo/filecache"
+	"github.com/anacrolix/missinggo/x"
 	"github.com/anacrolix/tagflag"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/iplist"
@@ -30,7 +31,8 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 	if err != nil {
 		log.Print(err)
 	}
-	fc := filecache.NewCache("filecache")
+	fc, err := filecache.NewCache("filecache")
+	x.Pie(err)
 	fc.SetCapacity(flags.CacheCapacity.Int64())
 	storageProvider := fc.AsResourceProvider()
 	return torrent.NewClient(&torrent.Config{
