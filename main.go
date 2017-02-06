@@ -18,9 +18,9 @@ import (
 )
 
 var flags = struct {
-	Addr          string
-	DHTPublicIP   net.IP
-	CacheCapacity tagflag.Bytes
+	Addr          string        `help:"HTTP listen address"`
+	DHTPublicIP   net.IP        `help:"DHT secure IP"`
+	CacheCapacity tagflag.Bytes `help:"Data cache capacity"`
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
