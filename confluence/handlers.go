@@ -101,7 +101,7 @@ var metainfoHandler = alice.New(withTorrentContext).ThenFunc(func(w http.Respons
 		return
 	}
 	t := torrentForRequest(r)
-	t.AddTrackers(mi.AnnounceList)
+	t.AddTrackers(mi.UpvertedAnnounceList())
 	t.SetInfoBytes(mi.InfoBytes)
 	saveTorrentFile(t)
 })

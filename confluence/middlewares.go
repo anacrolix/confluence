@@ -29,7 +29,7 @@ func withTorrentContext(h http.Handler) http.Handler {
 		if new {
 			mi := cachedMetaInfo(ih)
 			if mi != nil {
-				t.AddTrackers(mi.AnnounceList)
+				t.AddTrackers(mi.UpvertedAnnounceList())
 				t.SetInfoBytes(mi.InfoBytes)
 			}
 			go saveTorrentWhenGotInfo(t)
