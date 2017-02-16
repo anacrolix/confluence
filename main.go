@@ -23,6 +23,7 @@ var flags = struct {
 	DHTPublicIP   net.IP        `help:"DHT secure IP"`
 	CacheCapacity tagflag.Bytes `help:"Data cache capacity"`
 	TorrentGrace  time.Duration `help:"How long to wait to drop a torrent after its last request"`
+	FileDir        string        `help:"File-based storage directory, overrides piece storage"`
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
@@ -34,13 +35,19 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 	if err != nil {
 		log.Print(err)
 	}
-	fc, err := filecache.NewCache("filecache")
-	x.Pie(err)
-	fc.SetCapacity(flags.CacheCapacity.Int64())
-	storageProvider := fc.AsResourceProvider()
+	storage := func() storage.ClientImpl {
+		if flags.FileDir != "" {
+			return storage.NewFile(flags.FileDir)
+		}
+		fc, err := filecache.NewCache("filecache")
+		x.Pie(err)
+		fc.SetCapacity(flags.CacheCapacity.Int64())
+		storageProvider := fc.AsResourceProvider()
+		return storage.NewResourcePieces(storageProvider)
+	}()
 	return torrent.NewClient(&torrent.Config{
 		IPBlocklist:    blocklist,
-		DefaultStorage: storage.NewResourcePieces(storageProvider),
+		DefaultStorage: storage,
 		DHTConfig: dht.ServerConfig{
 			PublicIP: flags.DHTPublicIP,
 		},
