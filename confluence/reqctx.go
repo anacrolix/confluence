@@ -2,6 +2,7 @@ package confluence
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/anacrolix/missinggo/refclose"
 	"github.com/anacrolix/torrent"
@@ -9,9 +10,10 @@ import (
 )
 
 var (
-	torrentClientContextKey = new(byte)
-	torrentContextKey       = new(byte)
-	torrentRefs             refclose.RefPool
+	torrentClientContextKey     = new(byte)
+	torrentContextKey           = new(byte)
+	torrentCloseGraceContextKey = new(byte)
+	torrentRefs                 refclose.RefPool
 )
 
 func torrentClientForRequest(r *http.Request) *torrent.Client {
@@ -25,4 +27,8 @@ func torrentForRequest(r *http.Request) *torrent.Torrent {
 		panic(ih)
 	}
 	return t
+}
+
+func torrentCloseGraceForRequest(r *http.Request) time.Duration {
+	return r.Context().Value(torrentCloseGraceContextKey).(time.Duration)
 }

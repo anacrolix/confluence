@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/anacrolix/dht"
 	_ "github.com/anacrolix/envpprof"
@@ -21,9 +22,11 @@ var flags = struct {
 	Addr          string        `help:"HTTP listen address"`
 	DHTPublicIP   net.IP        `help:"DHT secure IP"`
 	CacheCapacity tagflag.Bytes `help:"Data cache capacity"`
+	TorrentGrace  time.Duration `help:"How long to wait to drop a torrent after its last request"`
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
+	TorrentGrace:  time.Minute,
 }
 
 func newTorrentClient() (ret *torrent.Client, err error) {
@@ -58,7 +61,7 @@ func main() {
 	}
 	defer l.Close()
 	log.Printf("serving http at %s", l.Addr())
-	h := &confluence.Handler{cl}
+	h := &confluence.Handler{cl, flags.TorrentGrace}
 	err = http.Serve(l, h)
 	if err != nil {
 		log.Fatal(err)

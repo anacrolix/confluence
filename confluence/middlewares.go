@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/anacrolix/missinggo/refclose"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -21,11 +22,17 @@ func withTorrentContext(h http.Handler) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ref := torrentRefs.NewRef(ih)
+		var ref *refclose.Ref
+		grace := torrentCloseGraceForRequest(r)
+		if grace >= 0 {
+			ref = torrentRefs.NewRef(ih)
+		}
 		tc := torrentClientForRequest(r)
 		t, new := tc.AddTorrentInfoHash(ih)
 		ref.SetCloser(t.Drop)
-		defer time.AfterFunc(time.Minute, ref.Release)
+		if grace >= 0 {
+			defer time.AfterFunc(grace, ref.Release)
+		}
 		if new {
 			mi := cachedMetaInfo(ih)
 			if mi != nil {
