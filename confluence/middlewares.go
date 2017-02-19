@@ -22,6 +22,7 @@ func withTorrentContext(h http.Handler) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		// TODO: Create abstraction for not refcounting Torrents.
 		var ref *refclose.Ref
 		grace := torrentCloseGraceForRequest(r)
 		if grace >= 0 {
@@ -29,8 +30,8 @@ func withTorrentContext(h http.Handler) http.Handler {
 		}
 		tc := torrentClientForRequest(r)
 		t, new := tc.AddTorrentInfoHash(ih)
-		ref.SetCloser(t.Drop)
 		if grace >= 0 {
+			ref.SetCloser(t.Drop)
 			defer time.AfterFunc(grace, ref.Release)
 		}
 		if new {
