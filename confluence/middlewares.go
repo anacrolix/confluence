@@ -42,7 +42,7 @@ func withTorrentContext(h http.Handler) http.Handler {
 			}
 			go saveTorrentWhenGotInfo(t)
 		}
-		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), torrentContextKey, ref)))
+		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), torrentContextKey, t)))
 	})
 }
 

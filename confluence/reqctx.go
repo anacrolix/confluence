@@ -6,7 +6,6 @@ import (
 
 	"github.com/anacrolix/missinggo/refclose"
 	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
 )
 
 var (
@@ -21,12 +20,7 @@ func torrentClientForRequest(r *http.Request) *torrent.Client {
 }
 
 func torrentForRequest(r *http.Request) *torrent.Torrent {
-	ih := r.Context().Value(torrentContextKey).(*refclose.Ref).Key().(metainfo.Hash)
-	t, ok := torrentClientForRequest(r).Torrent(ih)
-	if !ok {
-		panic(ih)
-	}
-	return t
+	return r.Context().Value(torrentContextKey).(*torrent.Torrent)
 }
 
 func torrentCloseGraceForRequest(r *http.Request) time.Duration {
