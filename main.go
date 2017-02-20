@@ -23,7 +23,8 @@ var flags = struct {
 	DHTPublicIP   net.IP        `help:"DHT secure IP"`
 	CacheCapacity tagflag.Bytes `help:"Data cache capacity"`
 	TorrentGrace  time.Duration `help:"How long to wait to drop a torrent after its last request"`
-	FileDir        string        `help:"File-based storage directory, overrides piece storage"`
+	FileDir       string        `help:"File-based storage directory, overrides piece storage"`
+	Seed          bool          `help:"Seed data"`
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
@@ -51,6 +52,7 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 		DHTConfig: dht.ServerConfig{
 			PublicIP: flags.DHTPublicIP,
 		},
+		Seed: flags.Seed,
 	})
 }
 
