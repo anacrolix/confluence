@@ -67,10 +67,10 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 				for {
 					select {
 					case <-readClosed:
-						log.Printf("event handler websocket read closed")
+						eventHandlerWebsocketReadClosed.Add(1)
 						return
 					case <-r.Context().Done():
-						log.Printf("event handler request context done")
+						eventHandlerContextDone.Add(1)
 						return
 					case _i := <-s.Values:
 						i := _i.(torrent.PieceStateChange).Index
