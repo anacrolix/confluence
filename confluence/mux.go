@@ -1,14 +1,18 @@
 package confluence
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/justinas/alice"
+)
 
 var mux = http.NewServeMux()
 
 func init() {
-	mux.HandleFunc("/data", dataHandler)
+	mux.Handle("/data", alice.New(withTorrentContext).ThenFunc(dataHandler))
 	mux.HandleFunc("/status", statusHandler)
-	mux.HandleFunc("/info", infoHandler)
-	mux.HandleFunc("/events", eventHandler)
-	mux.HandleFunc("/fileState", fileStateHandler)
-	mux.Handle("/metainfo", metainfoHandler)
+	mux.Handle("/info", alice.New(withTorrentContext).ThenFunc(infoHandler))
+	mux.Handle("/events", alice.New(withTorrentContext).ThenFunc(eventHandler))
+	mux.Handle("/fileState", alice.New(withTorrentContext).ThenFunc(fileStateHandler))
+	mux.Handle("/metainfo", alice.New(withTorrentContext).ThenFunc(metainfoHandler))
 }
