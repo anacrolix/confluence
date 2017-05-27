@@ -11,7 +11,6 @@ import (
 	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/torrent"
-	"golang.org/x/net/context"
 )
 
 // Path is the given request path.
@@ -58,18 +57,9 @@ func serveTorrentSection(w http.ResponseWriter, r *http.Request, t *torrent.Torr
 	}{
 		Reader: readContexter{
 			r: tr,
-			ctx: func() context.Context {
-				ctx, cancel := context.WithCancel(context.Background())
-				cn := w.(http.CloseNotifier).CloseNotify()
-				go func() {
-					select {
-					case <-cn:
-						cancel()
-					case <-r.Context().Done():
-					}
-				}()
-				return ctx
-			}(),
+			// From Go 1.8, the Request Context is done when the client goes
+			// away.
+			ctx: r.Context(),
 		},
 		Seeker: tr,
 	}, offset, length)
