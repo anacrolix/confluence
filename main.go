@@ -25,6 +25,9 @@ var flags = struct {
 	TorrentGrace  time.Duration `help:"How long to wait to drop a torrent after its last request"`
 	FileDir       string        `help:"File-based storage directory, overrides piece storage"`
 	Seed          bool          `help:"Seed data"`
+	// You'd want this if access to the main HTTP service is trusted, such as
+	// used over localhost by other known services.
+	DebugOnMain bool `help:"Expose default serve mux /debug/ endpoints over http"`
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
@@ -70,7 +73,15 @@ func main() {
 	}
 	defer l.Close()
 	log.Printf("serving http at %s", l.Addr())
-	h := &confluence.Handler{cl, flags.TorrentGrace}
+	var h http.Handler = &confluence.Handler{cl, flags.TorrentGrace}
+	if flags.DebugOnMain {
+		h = func() http.Handler {
+			mux := http.NewServeMux()
+			mux.Handle("/debug/", http.DefaultServeMux)
+			mux.Handle("/", h)
+			return mux
+		}()
+	}
 	err = http.Serve(l, h)
 	if err != nil {
 		log.Fatal(err)
