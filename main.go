@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -45,6 +46,20 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 		}
 		fc, err := filecache.NewCache("filecache")
 		x.Pie(err)
+
+		// Register filecache debug endpoints on the default muxer.
+		http.HandleFunc("/debug/filecache/status", func(w http.ResponseWriter, r *http.Request) {
+			info := fc.Info()
+			fmt.Fprintf(w, "Capacity: %d\n", info.Capacity)
+			fmt.Fprintf(w, "Current Size: %d\n", info.Filled)
+			fmt.Fprintf(w, "Item Count: %d\n", info.NumItems)
+		})
+		http.HandleFunc("/debug/filecache/lru", func(w http.ResponseWriter, r *http.Request) {
+			fc.WalkItems(func(item filecache.ItemInfo) {
+				fmt.Fprintf(w, "%s\t%d\t%s\n", item.Accessed, item.Size, item.Path)
+			})
+		})
+
 		fc.SetCapacity(flags.CacheCapacity.Int64())
 		storageProvider := fc.AsResourceProvider()
 		return storage.NewResourcePieces(storageProvider)
