@@ -40,6 +40,10 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 	if err != nil {
 		log.Print(err)
 	}
+	dhtStartingNodes, err := dht.GlobalBootstrapAddrs()
+	if err != nil {
+		return
+	}
 	storage := func() storage.ClientImpl {
 		if flags.FileDir != "" {
 			return storage.NewFile(flags.FileDir)
@@ -68,7 +72,8 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 		IPBlocklist:    blocklist,
 		DefaultStorage: storage,
 		DHTConfig: dht.ServerConfig{
-			PublicIP: flags.DHTPublicIP,
+			PublicIP:      flags.DHTPublicIP,
+			StartingNodes: dhtStartingNodes,
 		},
 		Seed: flags.Seed,
 	})
