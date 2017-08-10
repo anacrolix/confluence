@@ -28,7 +28,6 @@ func infohashFromQueryOrServeError(w http.ResponseWriter, q url.Values) (ih meta
 // Handles ref counting, close grace, and various torrent client wrapping
 // work.
 func getTorrentHandle(r *http.Request, ih metainfo.Hash) *torrent.Torrent {
-	// TODO: Create abstraction for not refcounting Torrents.
 	var ref *refclose.Ref
 	grace := torrentCloseGraceForRequest(r)
 	if grace >= 0 {
@@ -38,7 +37,10 @@ func getTorrentHandle(r *http.Request, ih metainfo.Hash) *torrent.Torrent {
 	t, new := tc.AddTorrentInfoHash(ih)
 	if grace >= 0 {
 		ref.SetCloser(t.Drop)
-		defer time.AfterFunc(grace, ref.Release)
+		go func() {
+			defer time.AfterFunc(grace, ref.Release)
+			<-r.Context().Done()
+		}()
 	}
 	if new {
 		mi := cachedMetaInfo(ih)
