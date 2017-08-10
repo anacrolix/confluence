@@ -87,6 +87,9 @@ func main() {
 		log.Fatalf("error creating torrent client: %s", err)
 	}
 	defer cl.Close()
+	http.HandleFunc("/debug/dht", func(w http.ResponseWriter, r *http.Request) {
+		cl.DHT().WriteStatus(w)
+	})
 	l, err := net.Listen("tcp", flags.Addr)
 	if err != nil {
 		log.Fatal(err)
