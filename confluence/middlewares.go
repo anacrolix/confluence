@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -13,35 +14,50 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
+const infohashQueryKey = "ih"
+
+func infohashFromQueryOrServeError(w http.ResponseWriter, q url.Values) (ih metainfo.Hash, ok bool) {
+	if err := ih.FromHexString(q.Get(infohashQueryKey)); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	ok = true
+	return
+}
+
+// Handles ref counting, close grace, and various torrent client wrapping
+// work.
+func getTorrentHandle(r *http.Request, ih metainfo.Hash) *torrent.Torrent {
+	// TODO: Create abstraction for not refcounting Torrents.
+	var ref *refclose.Ref
+	grace := torrentCloseGraceForRequest(r)
+	if grace >= 0 {
+		ref = torrentRefs.NewRef(ih)
+	}
+	tc := torrentClientForRequest(r)
+	t, new := tc.AddTorrentInfoHash(ih)
+	if grace >= 0 {
+		ref.SetCloser(t.Drop)
+		defer time.AfterFunc(grace, ref.Release)
+	}
+	if new {
+		mi := cachedMetaInfo(ih)
+		if mi != nil {
+			t.AddTrackers(mi.UpvertedAnnounceList())
+			t.SetInfoBytes(mi.InfoBytes)
+		}
+		go saveTorrentWhenGotInfo(t)
+	}
+	return t
+}
+
 func withTorrentContext(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		var ih metainfo.Hash
-		err := ih.FromHexString(q.Get("ih"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		ih, ok := infohashFromQueryOrServeError(w, r.URL.Query())
+		if !ok {
 			return
 		}
-		// TODO: Create abstraction for not refcounting Torrents.
-		var ref *refclose.Ref
-		grace := torrentCloseGraceForRequest(r)
-		if grace >= 0 {
-			ref = torrentRefs.NewRef(ih)
-		}
-		tc := torrentClientForRequest(r)
-		t, new := tc.AddTorrentInfoHash(ih)
-		if grace >= 0 {
-			ref.SetCloser(t.Drop)
-			defer time.AfterFunc(grace, ref.Release)
-		}
-		if new {
-			mi := cachedMetaInfo(ih)
-			if mi != nil {
-				t.AddTrackers(mi.UpvertedAnnounceList())
-				t.SetInfoBytes(mi.InfoBytes)
-			}
-			go saveTorrentWhenGotInfo(t)
-		}
+		t := getTorrentHandle(r, ih)
 		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), torrentContextKey, t)))
 	})
 }
