@@ -14,10 +14,14 @@ Usage:
 Options:
   -addr            (string)          HTTP listen address (Default: localhost:8080)
   -cacheCapacity   (tagflag.Bytes)   Data cache capacity (Default: 11 GB)
+  -debugOnMain     (bool)            Expose default serve mux /debug/ endpoints over http
   -dhtPublicIP     (net.IP)          DHT secure IP
+  -fileDir         (string)          File-based storage directory, overrides piece storage
+  -seed            (bool)            Seed data
+  -torrentGrace    (time.Duration)   How long to wait to drop a torrent after its last request (Default: 1m0s)
 ```
 
-Confluence will announce itself to DHT, and wait for HTTP activity. Torrents are added to the client as needed. Without an active request on a torrent, it is kicked from the client after one minute. Its data however may remain in the cache for future uses of that torrent.
+Confluence will announce itself to DHT, and wait for HTTP activity. Torrents are added to the client as needed. Without an active request on a torrent, it is kicked from the client after the torrent grace period. Its data however may remain in the cache for future uses of that torrent.
 
 # Routes
 

@@ -21,7 +21,7 @@ import (
 
 var flags = struct {
 	Addr          string        `help:"HTTP listen address"`
-	DHTPublicIP   net.IP        `help:"DHT secure IP"`
+	DHTPublicIP   net.IP        `help:"IP as it will appear to the DHT network"`
 	CacheCapacity tagflag.Bytes `help:"Data cache capacity"`
 	TorrentGrace  time.Duration `help:"How long to wait to drop a torrent after its last request"`
 	FileDir       string        `help:"File-based storage directory, overrides piece storage"`
