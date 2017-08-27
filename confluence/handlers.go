@@ -77,6 +77,10 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 func fileStateHandler(w http.ResponseWriter, r *http.Request) {
 	path_ := r.URL.Query().Get("path")
 	f := torrentFileByPath(torrentForRequest(r), path_)
+	if f == nil {
+		http.Error(w, "file not found", http.StatusNotFound)
+		return
+	}
 	json.NewEncoder(w).Encode(f.State())
 }
 
