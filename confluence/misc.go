@@ -55,11 +55,11 @@ func serveTorrentSection(w http.ResponseWriter, r *http.Request, t *torrent.Torr
 		io.Reader
 		io.Seeker
 	}{
-		Reader: readContexter{
-			r: tr,
+		Reader: missinggo.ContextedReader{
+			R: tr,
 			// From Go 1.8, the Request Context is done when the client goes
 			// away.
-			ctx: r.Context(),
+			Ctx: r.Context(),
 		},
 		Seeker: tr,
 	}, offset, length)
