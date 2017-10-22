@@ -24,14 +24,23 @@ func torrentFileByPath(t *torrent.Torrent, path_ string) *torrent.File {
 }
 
 func saveTorrentFile(t *torrent.Torrent) (err error) {
-	path_ := filepath.Join("torrents", t.InfoHash().HexString()+".torrent")
-	os.MkdirAll(filepath.Dir(path_), 0750)
-	f, err := os.OpenFile(path_, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	p := filepath.Join("torrents", t.InfoHash().HexString()+".torrent")
+	ps := p + ".save"
+	os.MkdirAll(filepath.Dir(ps), 0750)
+	f, err := os.OpenFile(ps, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	if err != nil {
+		return err
+	}
+	err = t.Metainfo().Write(f)
+	if err != nil {
+		f.Close()
+		return
+	}
+	err = f.Close()
 	if err != nil {
 		return
 	}
-	defer f.Close()
-	return t.Metainfo().Write(f)
+	return os.Rename(ps, p)
 }
 
 func getTorrentClientFromRequestContext(r *http.Request) *torrent.Client {
