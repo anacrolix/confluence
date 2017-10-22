@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/bencode"
@@ -28,11 +29,22 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 
 func infoHandler(w http.ResponseWriter, r *http.Request) {
 	t := torrentForRequest(r)
-	select {
-	case <-t.GotInfo():
-	case <-r.Context().Done():
-		return
+	if nowait, err := strconv.ParseBool(r.URL.Query().Get("nowait")); err == nil && nowait {
+		select {
+		case <-t.GotInfo():
+		default:
+			http.Error(w, "info not ready", http.StatusAccepted)
+			return
+		}
+	} else {
+		// w.WriteHeader(http.StatusProcessing)
+		select {
+		case <-t.GotInfo():
+		case <-r.Context().Done():
+			return
+		}
 	}
+	// w.WriteHeader(http.StatusOK)
 	mi := t.Metainfo()
 	w.Write(mi.InfoBytes)
 }
