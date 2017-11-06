@@ -10,6 +10,10 @@ Installation
 go get github.com/anacrolix/confluence
 ```
 
+## Android
+
+See https://github.com/arranlomas/Android-Confluence-Wrapper and https://github.com/arranlomas/confluence.
+
 Usage
 =====
 
