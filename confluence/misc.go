@@ -17,7 +17,7 @@ import (
 func torrentFileByPath(t *torrent.Torrent, path_ string) *torrent.File {
 	for _, f := range t.Files() {
 		if f.DisplayPath() == path_ {
-			return &f
+			return f
 		}
 	}
 	return nil
