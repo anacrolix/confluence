@@ -1,7 +1,6 @@
 package confluence
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -9,7 +8,6 @@ import (
 	"time"
 
 	"github.com/anacrolix/missinggo"
-	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/torrent"
 )
 
