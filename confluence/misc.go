@@ -72,6 +72,6 @@ func serveFile(w http.ResponseWriter, r *http.Request, t *torrent.Torrent, _path
 		http.Error(w, "file not found", http.StatusNotFound)
 		return
 	}
-	w.Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", t.InfoHash().HexString(), _path)))
 	serveTorrentSection(w, r, t, tf.Offset(), tf.Length(), _path)
+	// w.Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", t.InfoHash().HexString(), _path)))
 }
