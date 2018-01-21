@@ -44,14 +44,13 @@ func serveTorrent(w http.ResponseWriter, r *http.Request, t *torrent.Torrent) {
 	case <-r.Context().Done():
 		return
 	}
-	serveTorrentSection(w, r, t, 0, t.Length(), t.Name())
+	serveReader(w, r, t.NewReader(), t.Name())
 }
 
-func serveTorrentSection(w http.ResponseWriter, r *http.Request, t *torrent.Torrent, offset, length int64, name string) {
-	tr := t.NewReader()
+func serveReader(w http.ResponseWriter, r *http.Request, tr torrent.Reader, name string) {
 	defer tr.Close()
 	tr.SetReadahead(48 << 20)
-	rs := missinggo.NewSectionReadSeeker(struct {
+	rs := struct {
 		io.Reader
 		io.Seeker
 	}{
@@ -62,7 +61,7 @@ func serveTorrentSection(w http.ResponseWriter, r *http.Request, t *torrent.Torr
 			Ctx: r.Context(),
 		},
 		Seeker: tr,
-	}, offset, length)
+	}
 	http.ServeContent(w, r, name, time.Time{}, rs)
 }
 
@@ -72,6 +71,6 @@ func serveFile(w http.ResponseWriter, r *http.Request, t *torrent.Torrent, _path
 		http.Error(w, "file not found", http.StatusNotFound)
 		return
 	}
-	serveTorrentSection(w, r, t, tf.Offset(), tf.Length(), _path)
 	// w.Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", t.InfoHash().HexString(), _path)))
+	serveReader(w, r, tf.NewReader(), _path)
 }
