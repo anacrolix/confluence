@@ -37,9 +37,20 @@ var flags = struct {
 }
 
 func newTorrentClient() (ret *torrent.Client, err error) {
-	blocklist, err := iplist.MMapPacked("packed-blocklist")
+	blocklist, err := iplist.MMapPackedFile("packed-blocklist")
 	if err != nil {
 		log.Print(err)
+	} else {
+		defer func() {
+			if err != nil {
+				blocklist.Close()
+			} else {
+				go func() {
+					<-ret.Closed()
+					blocklist.Close()
+				}()
+			}
+		}()
 	}
 	storage := func() storage.ClientImpl {
 		if flags.FileDir != "" {

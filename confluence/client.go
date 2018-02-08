@@ -10,10 +10,20 @@ import (
 )
 
 func NewDefaultTorrentClient() (ret *torrent.Client, err error) {
-	blocklist, err := iplist.MMapPacked("packed-blocklist")
+	blocklist, err := iplist.MMapPackedFile("packed-blocklist")
 	if err != nil {
 		log.Print(err)
 	}
+	defer func() {
+		if err != nil {
+			blocklist.Close()
+		} else {
+			go func() {
+				<-ret.Closed()
+				blocklist.Close()
+			}()
+		}
+	}()
 	fileCache, err := filecache.NewCache("filecache")
 	if err != nil {
 		return
