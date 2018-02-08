@@ -20,12 +20,13 @@ import (
 )
 
 var flags = struct {
-	Addr          string        `help:"HTTP listen address"`
-	DHTPublicIP   net.IP        `help:"IP as it will appear to the DHT network"`
-	CacheCapacity tagflag.Bytes `help:"Data cache capacity"`
-	TorrentGrace  time.Duration `help:"How long to wait to drop a torrent after its last request"`
-	FileDir       string        `help:"File-based storage directory, overrides piece storage"`
-	Seed          bool          `help:"Seed data"`
+	Addr               string        `help:"HTTP listen address"`
+	DHTPublicIP        net.IP        `help:"IP as it will appear to the DHT network"`
+	CacheCapacity      tagflag.Bytes `help:"Data cache capacity"`
+	TorrentGrace       time.Duration `help:"How long to wait to drop a torrent after its last request"`
+	FileDir            string        `help:"File-based storage directory, overrides piece storage"`
+	Seed               bool          `help:"Seed data"`
+	UPnPPortForwarding bool          `help:"Port forward via UPnP"`
 	// You'd want this if access to the main HTTP service is trusted, such as
 	// used over localhost by other known services.
 	DebugOnMain bool `help:"Expose default serve mux /debug/ endpoints over http"`
@@ -72,6 +73,7 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 			StartingNodes: dht.GlobalBootstrapAddrs,
 		},
 		Seed: flags.Seed,
+		NoDefaultPortForwarding: !flags.UPnPPortForwarding,
 	})
 }
 

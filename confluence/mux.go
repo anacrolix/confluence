@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/anacrolix/missinggo/httptoo"
-
 	"github.com/justinas/alice"
 )
 
