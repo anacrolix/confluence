@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/torrent"
 )
 
@@ -64,6 +65,12 @@ func serveReader(w http.ResponseWriter, r *http.Request, tr torrent.Reader, name
 }
 
 func serveFile(w http.ResponseWriter, r *http.Request, t *torrent.Torrent, _path string) {
+	select {
+	case <-r.Context().Done():
+		http.Error(w, "request canceled", httptoo.StatusClientCancelledRequest)
+		return
+	case <-t.GotInfo():
+	}
 	tf := torrentFileByPath(t, _path)
 	if tf == nil {
 		http.Error(w, "file not found", http.StatusNotFound)
