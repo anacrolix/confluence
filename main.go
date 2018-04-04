@@ -21,7 +21,8 @@ import (
 
 var flags = struct {
 	Addr               string        `help:"HTTP listen address"`
-	DHTPublicIP        net.IP        `help:"IP as it will appear to the DHT network"`
+	PublicIp4          net.IP        `help:"Public IPv4 address"` // TODO: Rename
+	PublicIp6          net.IP        `help:"Public IPv6 address"`
 	CacheCapacity      tagflag.Bytes `help:"Data cache capacity"`
 	TorrentGrace       time.Duration `help:"How long to wait to drop a torrent after its last request"`
 	FileDir            string        `help:"File-based storage directory, overrides piece storage"`
@@ -80,10 +81,13 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 		IPBlocklist:    blocklist,
 		DefaultStorage: storage,
 		DHTConfig: dht.ServerConfig{
-			PublicIP:      flags.DHTPublicIP,
+			// TODO: We need a server for each IP family.
+			PublicIP:      flags.PublicIp4,
 			StartingNodes: dht.GlobalBootstrapAddrs,
 		},
-		Seed: flags.Seed,
+		PublicIp4: flags.PublicIp4,
+		PublicIp6: flags.PublicIp6,
+		Seed:      flags.Seed,
 		NoDefaultPortForwarding: !flags.UPnPPortForwarding,
 	})
 }
