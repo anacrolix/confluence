@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anacrolix/dht"
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/missinggo/filecache"
 	"github.com/anacrolix/missinggo/x"
@@ -77,19 +76,14 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 		storageProvider := fc.AsResourceProvider()
 		return storage.NewResourcePieces(storageProvider)
 	}()
-	return torrent.NewClient(&torrent.Config{
+	return torrent.NewClient((&torrent.Config{
 		IPBlocklist:    blocklist,
 		DefaultStorage: storage,
-		DHTConfig: dht.ServerConfig{
-			// TODO: We need a server for each IP family.
-			PublicIP:      flags.PublicIp4,
-			StartingNodes: dht.GlobalBootstrapAddrs,
-		},
-		PublicIp4: flags.PublicIp4,
-		PublicIp6: flags.PublicIp6,
-		Seed:      flags.Seed,
+		PublicIp4:      flags.PublicIp4,
+		PublicIp6:      flags.PublicIp6,
+		Seed:           flags.Seed,
 		NoDefaultPortForwarding: !flags.UPnPPortForwarding,
-	})
+	}).SetListenAddr(":50007"))
 }
 
 func main() {
@@ -101,7 +95,9 @@ func main() {
 	}
 	defer cl.Close()
 	http.HandleFunc("/debug/dht", func(w http.ResponseWriter, r *http.Request) {
-		cl.DHT().WriteStatus(w)
+		for _, ds := range cl.DhtServers() {
+			ds.WriteStatus(w)
+		}
 	})
 	l, err := net.Listen("tcp", flags.Addr)
 	if err != nil {
