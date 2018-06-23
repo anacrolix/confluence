@@ -76,14 +76,16 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 		storageProvider := fc.AsResourceProvider()
 		return storage.NewResourcePieces(storageProvider)
 	}()
-	return torrent.NewClient((&torrent.Config{
-		IPBlocklist:    blocklist,
-		DefaultStorage: storage,
-		PublicIp4:      flags.PublicIp4,
-		PublicIp6:      flags.PublicIp6,
-		Seed:           flags.Seed,
-		NoDefaultPortForwarding: !flags.UPnPPortForwarding,
-	}).SetListenAddr(":50007"))
+	cfg := torrent.NewDefaultClientConfig()
+	cfg.IPBlocklist = blocklist
+	cfg.DefaultStorage = storage
+	cfg.PublicIp4 = flags.PublicIp4
+	cfg.PublicIp6 = flags.PublicIp6
+	cfg.Seed = flags.Seed
+	cfg.NoDefaultPortForwarding = !flags.UPnPPortForwarding
+	cfg.SetListenAddr(":50007")
+	// cfg.DisableAcceptRateLimiting = true
+	return torrent.NewClient(cfg)
 }
 
 func main() {

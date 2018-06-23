@@ -30,8 +30,8 @@ func NewDefaultTorrentClient() (ret *torrent.Client, err error) {
 	}
 	fileCache.SetCapacity(10 << 30)
 	storageProvider := fileCache.AsResourceProvider()
-	return torrent.NewClient(&torrent.Config{
-		IPBlocklist:    blocklist,
-		DefaultStorage: storage.NewResourcePieces(storageProvider),
-	})
+	cfg := torrent.NewDefaultClientConfig()
+	cfg.IPBlocklist = blocklist
+	cfg.DefaultStorage = storage.NewResourcePieces(storageProvider)
+	return torrent.NewClient(cfg)
 }
