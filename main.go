@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	_ "github.com/anacrolix/envpprof"
@@ -36,7 +38,7 @@ var flags = struct {
 	TorrentGrace:  time.Minute,
 }
 
-func newTorrentClient() (ret *torrent.Client, err error) {
+func newTorrentClient(storage storage.ClientImpl) (ret *torrent.Client, err error) {
 	blocklist, err := iplist.MMapPackedFile("packed-blocklist")
 	if err != nil {
 		log.Print(err)
@@ -52,30 +54,6 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 			}
 		}()
 	}
-	storage := func() storage.ClientImpl {
-		if flags.FileDir != "" {
-			return storage.NewFile(flags.FileDir)
-		}
-		fc, err := filecache.NewCache("filecache")
-		x.Pie(err)
-
-		// Register filecache debug endpoints on the default muxer.
-		http.HandleFunc("/debug/filecache/status", func(w http.ResponseWriter, r *http.Request) {
-			info := fc.Info()
-			fmt.Fprintf(w, "Capacity: %d\n", info.Capacity)
-			fmt.Fprintf(w, "Current Size: %d\n", info.Filled)
-			fmt.Fprintf(w, "Item Count: %d\n", info.NumItems)
-		})
-		http.HandleFunc("/debug/filecache/lru", func(w http.ResponseWriter, r *http.Request) {
-			fc.WalkItems(func(item filecache.ItemInfo) {
-				fmt.Fprintf(w, "%s\t%d\t%s\n", item.Accessed, item.Size, item.Path)
-			})
-		})
-
-		fc.SetCapacity(flags.CacheCapacity.Int64())
-		storageProvider := fc.AsResourceProvider()
-		return storage.NewResourcePieces(storageProvider)
-	}()
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.IPBlocklist = blocklist
 	cfg.DefaultStorage = storage
@@ -88,10 +66,38 @@ func newTorrentClient() (ret *torrent.Client, err error) {
 	return torrent.NewClient(cfg)
 }
 
+func getStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash)) {
+	if flags.FileDir != "" {
+		return storage.NewFileByInfoHash(flags.FileDir), func(ih torrent.InfoHash) {
+			os.RemoveAll(filepath.Join(flags.FileDir, ih.HexString()))
+		}
+	}
+	fc, err := filecache.NewCache("filecache")
+	x.Pie(err)
+
+	// Register filecache debug endpoints on the default muxer.
+	http.HandleFunc("/debug/filecache/status", func(w http.ResponseWriter, r *http.Request) {
+		info := fc.Info()
+		fmt.Fprintf(w, "Capacity: %d\n", info.Capacity)
+		fmt.Fprintf(w, "Current Size: %d\n", info.Filled)
+		fmt.Fprintf(w, "Item Count: %d\n", info.NumItems)
+	})
+	http.HandleFunc("/debug/filecache/lru", func(w http.ResponseWriter, r *http.Request) {
+		fc.WalkItems(func(item filecache.ItemInfo) {
+			fmt.Fprintf(w, "%s\t%d\t%s\n", item.Accessed, item.Size, item.Path)
+		})
+	})
+
+	fc.SetCapacity(flags.CacheCapacity.Int64())
+	storageProvider := fc.AsResourceProvider()
+	return storage.NewResourcePieces(storageProvider), func(ih torrent.InfoHash) {}
+}
+
 func main() {
 	log.SetFlags(log.Flags() | log.Lshortfile)
 	tagflag.Parse(&flags)
-	cl, err := newTorrentClient()
+	storage, onTorrentGraceExtra := getStorage()
+	cl, err := newTorrentClient(storage)
 	if err != nil {
 		log.Fatalf("error creating torrent client: %s", err)
 	}
@@ -107,7 +113,15 @@ func main() {
 	}
 	defer l.Close()
 	log.Printf("serving http at %s", l.Addr())
-	var h http.Handler = &confluence.Handler{cl, flags.TorrentGrace}
+	var h http.Handler = &confluence.Handler{
+		cl,
+		flags.TorrentGrace,
+		func(t *torrent.Torrent) {
+			ih := t.InfoHash()
+			t.Drop()
+			onTorrentGraceExtra(ih)
+		},
+	}
 	if flags.DebugOnMain {
 		h = func() http.Handler {
 			mux := http.NewServeMux()

@@ -33,10 +33,6 @@ func saveTorrentFile(t *torrent.Torrent) (err error) {
 	return t.Metainfo().Write(f)
 }
 
-func getTorrentClientFromRequestContext(r *http.Request) *torrent.Client {
-	return r.Context().Value(torrentClientContextKey).(*torrent.Client)
-}
-
 func serveTorrent(w http.ResponseWriter, r *http.Request, t *torrent.Torrent) {
 	select {
 	case <-t.GotInfo():

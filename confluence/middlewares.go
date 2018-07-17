@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/anacrolix/missinggo/refclose"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -25,23 +24,18 @@ func infohashFromQueryOrServeError(w http.ResponseWriter, q url.Values) (ih meta
 	return
 }
 
-// Handles ref counting, close grace, and various torrent client wrapping
+// Handles ref counting, torrent grace, and various torrent client wrapping
 // work.
 func getTorrentHandle(r *http.Request, ih metainfo.Hash) *torrent.Torrent {
-	var ref *refclose.Ref
-	grace := torrentCloseGraceForRequest(r)
-	if grace >= 0 {
-		ref = torrentRefs.NewRef(ih)
-	}
-	tc := torrentClientForRequest(r)
+	h := getHandler(r)
+	ref := torrentRefs.NewRef(ih)
+	tc := h.TC
 	t, new := tc.AddTorrentInfoHash(ih)
-	if grace >= 0 {
-		ref.SetCloser(t.Drop)
-		go func() {
-			defer time.AfterFunc(grace, ref.Release)
-			<-r.Context().Done()
-		}()
-	}
+	ref.SetCloser(func() { h.OnTorrentGrace(t) })
+	go func() {
+		defer time.AfterFunc(h.TorrentGrace, ref.Release)
+		<-r.Context().Done()
+	}()
 	if new {
 		mi := cachedMetaInfo(ih)
 		if mi != nil {

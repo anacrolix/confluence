@@ -9,12 +9,12 @@ import (
 )
 
 type Handler struct {
-	TC                *torrent.Client
-	TorrentCloseGrace time.Duration
+	TC             *torrent.Client
+	TorrentGrace   time.Duration
+	OnTorrentGrace func(t *torrent.Torrent)
 }
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r = r.WithContext(context.WithValue(r.Context(), torrentClientContextKey, h.TC))
-	r = r.WithContext(context.WithValue(r.Context(), torrentCloseGraceContextKey, h.TorrentCloseGrace))
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(context.WithValue(r.Context(), handlerContextKey, h))
 	mux.ServeHTTP(w, r)
 }

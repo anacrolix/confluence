@@ -24,7 +24,7 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
-	getTorrentClientFromRequestContext(r).WriteStatus(w)
+	getHandler(r).TC.WriteStatus(w)
 }
 
 func infoHandler(w http.ResponseWriter, r *http.Request) {
