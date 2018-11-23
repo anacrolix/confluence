@@ -77,7 +77,9 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 				case _i := <-s.Values:
 					i := _i.(torrent.PieceStateChange).Index
 					if err := websocket.JSON.Send(c, Event{PieceChanged: &i}); err != nil {
-						log.Printf("error writing json to websocket: %s", err)
+						if r.Context().Err() == nil {
+							log.Printf("error writing json to websocket: %s", err)
+						}
 						return
 					}
 				}
