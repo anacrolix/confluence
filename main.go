@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/anacrolix/confluence/confluence"
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/missinggo/filecache"
 	"github.com/anacrolix/missinggo/x"
@@ -16,8 +17,6 @@ import (
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/iplist"
 	"github.com/anacrolix/torrent/storage"
-
-	"github.com/anacrolix/confluence/confluence"
 )
 
 var flags = struct {
