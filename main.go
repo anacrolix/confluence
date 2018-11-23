@@ -32,10 +32,12 @@ var flags = struct {
 	// You'd want this if access to the main HTTP service is trusted, such as
 	// used over localhost by other known services.
 	DebugOnMain bool `help:"Expose default serve mux /debug/ endpoints over http"`
+	Dht         bool
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
 	TorrentGrace:  time.Minute,
+	Dht:           true,
 }
 
 func newTorrentClient(storage storage.ClientImpl) (ret *torrent.Client, err error) {
@@ -61,6 +63,7 @@ func newTorrentClient(storage storage.ClientImpl) (ret *torrent.Client, err erro
 	cfg.PublicIp6 = flags.PublicIp6
 	cfg.Seed = flags.Seed
 	cfg.NoDefaultPortForwarding = !flags.UPnPPortForwarding
+	cfg.NoDHT = !flags.Dht
 	cfg.SetListenAddr(":50007")
 	// cfg.DisableAcceptRateLimiting = true
 	return torrent.NewClient(cfg)
