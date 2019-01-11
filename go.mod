@@ -3,7 +3,7 @@ module github.com/anacrolix/confluence
 require (
 	github.com/RoaringBitmap/roaring v0.4.16 // indirect
 	github.com/anacrolix/envpprof v0.0.0-20180404065416-323002cec2fa
-	github.com/anacrolix/missinggo v0.0.0-20181129073415-3237bf955fed
+	github.com/anacrolix/missinggo v0.1.0
 	github.com/anacrolix/mmsg v0.0.0-20180808012353-5adb2c1127c0 // indirect
 	github.com/anacrolix/tagflag v0.0.0-20180803105420-3a8ff5428f76
 	github.com/anacrolix/torrent v1.0.0

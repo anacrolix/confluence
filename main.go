@@ -63,7 +63,6 @@ func newTorrentClient(storage storage.ClientImpl) (ret *torrent.Client, err erro
 	cfg.Seed = flags.Seed
 	cfg.NoDefaultPortForwarding = !flags.UPnPPortForwarding
 	cfg.NoDHT = !flags.Dht
-	cfg.ConnTracker.SetMaxEntries(1000)
 	cfg.SetListenAddr(":50007")
 	http.HandleFunc("/debug/conntrack", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")

@@ -21,6 +21,8 @@ github.com/anacrolix/missinggo v0.0.0-20180725070939-60ef2fbf63df h1:+se8qhX5ivm
 github.com/anacrolix/missinggo v0.0.0-20180725070939-60ef2fbf63df/go.mod h1:kwGiTUTZ0+p4vAz3VbAI5a30t2YbvemcmspjKwrAz5s=
 github.com/anacrolix/missinggo v0.0.0-20181129073415-3237bf955fed h1:pMzstxgUXooGmNxZnjFSsnjtFd7s81sNI7L2pzEuWWs=
 github.com/anacrolix/missinggo v0.0.0-20181129073415-3237bf955fed/go.mod h1:IN+9GUe7OxKMIs/XeXEbT/rMUolmJzmlZiXHS7FwD/Y=
+github.com/anacrolix/missinggo v0.1.0 h1:6RNQxOV/NyMd+0uo0t5QYQ+W/dB1a+2sgA0l8GcnSFE=
+github.com/anacrolix/missinggo v0.1.0/go.mod h1:IN+9GUe7OxKMIs/XeXEbT/rMUolmJzmlZiXHS7FwD/Y=
 github.com/anacrolix/mmsg v0.0.0-20180515031531-a4a3ba1fc8bb h1:2Or5ccMoY4Kfao+WdL2w6tpY6ZEe+2VTVbIPd7A/Ajk=
 github.com/anacrolix/mmsg v0.0.0-20180515031531-a4a3ba1fc8bb/go.mod h1:x2/ErsYUmT77kezS63+wzZp8E3byYB0gzirM/WMBLfw=
 github.com/anacrolix/mmsg v0.0.0-20180808012353-5adb2c1127c0 h1:Fa1XqqLW62lQzEDlNA+QcdJbkfJcxQN0YC8983kj5tU=
