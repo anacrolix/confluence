@@ -30,8 +30,9 @@ var flags = struct {
 	UPnPPortForwarding bool          `help:"Port forward via UPnP"`
 	// You'd want this if access to the main HTTP service is trusted, such as
 	// used over localhost by other known services.
-	DebugOnMain bool `help:"Expose default serve mux /debug/ endpoints over http"`
-	Dht         bool
+	DebugOnMain     bool `help:"Expose default serve mux /debug/ endpoints over http"`
+	Dht             bool
+	DisableTrackers bool
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
@@ -63,6 +64,7 @@ func newTorrentClient(storage storage.ClientImpl) (ret *torrent.Client, err erro
 	cfg.Seed = flags.Seed
 	cfg.NoDefaultPortForwarding = !flags.UPnPPortForwarding
 	cfg.NoDHT = !flags.Dht
+	cfg.DisableTrackers = flags.DisableTrackers
 	cfg.SetListenAddr(":50007")
 	http.HandleFunc("/debug/conntrack", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
