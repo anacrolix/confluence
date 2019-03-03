@@ -151,11 +151,13 @@ func main() {
 	if flags.DebugOnMain {
 		h = func() http.Handler {
 			mux := http.NewServeMux()
+			mux.Handle("/metrics", http.DefaultServeMux)
 			mux.Handle("/debug/", http.DefaultServeMux)
 			mux.Handle("/", h)
 			return mux
 		}()
 	}
+	registerNumTorrentsMetric(cl)
 	err = http.Serve(l, h)
 	if err != nil {
 		log.Fatal(err)
