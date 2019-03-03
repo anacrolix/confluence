@@ -9,20 +9,23 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/anacrolix/confluence/confluence"
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/missinggo/filecache"
+	"github.com/anacrolix/missinggo/resource"
 	"github.com/anacrolix/missinggo/x"
 	"github.com/anacrolix/tagflag"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/iplist"
 	"github.com/anacrolix/torrent/storage"
+
+	"github.com/anacrolix/confluence/confluence"
 )
 
 var flags = struct {
 	Addr               string        `help:"HTTP listen address"`
 	PublicIp4          net.IP        `help:"Public IPv4 address"` // TODO: Rename
 	PublicIp6          net.IP        `help:"Public IPv6 address"`
+	UnlimitedCache     bool          `help:"Don't limit cache capacity"`
 	CacheCapacity      tagflag.Bytes `help:"Data cache capacity"`
 	TorrentGrace       time.Duration `help:"How long to wait to drop a torrent after its last request"`
 	FileDir            string        `help:"File-based storage directory, overrides piece storage"`
@@ -75,13 +78,19 @@ func newTorrentClient(storage storage.ClientImpl) (ret *torrent.Client, err erro
 	return torrent.NewClient(cfg)
 }
 
-func getStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash)) {
-	if flags.FileDir != "" {
-		return storage.NewFileByInfoHash(flags.FileDir), func(ih torrent.InfoHash) {
-			os.RemoveAll(filepath.Join(flags.FileDir, ih.HexString()))
+const storageRoot = "filecache"
+
+func getStorageProvider() resource.Provider {
+	if flags.UnlimitedCache {
+		return resource.TranslatedProvider{
+			BaseProvider: resource.OSFileProvider{},
+			BaseLocation: storageRoot,
+			JoinLocations: func(base, rel string) string {
+				return filepath.Join(base, rel)
+			},
 		}
 	}
-	fc, err := filecache.NewCache("filecache")
+	fc, err := filecache.NewCache(storageRoot)
 	x.Pie(err)
 
 	// Register filecache debug endpoints on the default muxer.
@@ -98,8 +107,16 @@ func getStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash)) 
 	})
 
 	fc.SetCapacity(flags.CacheCapacity.Int64())
-	storageProvider := fc.AsResourceProvider()
-	return storage.NewResourcePieces(storageProvider), func(ih torrent.InfoHash) {}
+	return fc.AsResourceProvider()
+}
+
+func getStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash)) {
+	if flags.FileDir != "" {
+		return storage.NewFileByInfoHash(flags.FileDir), func(ih torrent.InfoHash) {
+			os.RemoveAll(filepath.Join(flags.FileDir, ih.HexString()))
+		}
+	}
+	return storage.NewResourcePieces(getStorageProvider()), func(ih torrent.InfoHash) {}
 }
 
 func main() {
