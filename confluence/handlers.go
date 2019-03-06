@@ -27,26 +27,45 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 	getHandler(r).TC.WriteStatus(w)
 }
 
-func infoHandler(w http.ResponseWriter, r *http.Request) {
+
+func findTorrent(w http.ResponseWriter, r *http.Request) *torrent.Torrent {
 	t := torrentForRequest(r)
 	if nowait, err := strconv.ParseBool(r.URL.Query().Get("nowait")); err == nil && nowait {
 		select {
 		case <-t.GotInfo():
 		default:
 			http.Error(w, "info not ready", http.StatusAccepted)
-			return
+			return nil
 		}
 	} else {
 		// w.WriteHeader(http.StatusProcessing)
 		select {
 		case <-t.GotInfo():
 		case <-r.Context().Done():
-			return
+			return nil
 		}
 	}
+
 	// w.WriteHeader(http.StatusOK)
+
+	return t
+}
+
+func infoHandler(w http.ResponseWriter, r *http.Request) {
+	t := findTorrent(w, r)
+	if t == nil {
+		return
+	}
 	mi := t.Metainfo()
 	w.Write(mi.InfoBytes)
+}
+
+func torrentHandler(w http.ResponseWriter, r *http.Request) {
+	t := findTorrent(w, r)
+	if t == nil {
+		return
+	}
+	t.Metainfo().Write(w)
 }
 
 func eventHandler(w http.ResponseWriter, r *http.Request) {
