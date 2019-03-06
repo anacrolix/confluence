@@ -27,7 +27,6 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 	getHandler(r).TC.WriteStatus(w)
 }
 
-
 func findTorrent(w http.ResponseWriter, r *http.Request) *torrent.Torrent {
 	t := torrentForRequest(r)
 	if nowait, err := strconv.ParseBool(r.URL.Query().Get("nowait")); err == nil && nowait {
@@ -60,7 +59,7 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(mi.InfoBytes)
 }
 
-func torrentHandler(w http.ResponseWriter, r *http.Request) {
+func metainfoGetHandler(w http.ResponseWriter, r *http.Request) {
 	t := findTorrent(w, r)
 	if t == nil {
 		return
@@ -118,7 +117,7 @@ func fileStateHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(f.State())
 }
 
-func metainfoHandler(w http.ResponseWriter, r *http.Request) {
+func metainfoPostHandler(w http.ResponseWriter, r *http.Request) {
 	var mi metainfo.MetaInfo
 	err := bencode.NewDecoder(r.Body).Decode(&mi)
 	if err != nil {
