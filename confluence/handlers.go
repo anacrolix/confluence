@@ -65,6 +65,7 @@ func torrentHandler(w http.ResponseWriter, r *http.Request) {
 	if t == nil {
 		return
 	}
+	w.Header().Add("Content-Type", "application/x-bittorrent")
 	t.Metainfo().Write(w)
 }
 
