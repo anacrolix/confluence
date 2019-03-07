@@ -44,3 +44,4 @@ There are several routes to interact with torrents:
 -	`/events?ih=<infohash in hex>`. This is a websocket that emits frames with [confluence.Event] encoded as JSON for the torrent. The PieceChanged field for instance is set if the given piece changed [state](https://godoc.org/github.com/anacrolix/torrent#PieceState) within the torrent.
 -	`GET /fileState?ih=<infohash in hex>&path=<display path of file declared in torrent info>`. Returns [file state](https://godoc.org/github.com/anacrolix/torrent#File.State) encoded as JSON.
 -	`POST /metainfo?ih=<infohash in hex>`. The request body is a bencoded metainfo, as typically appears in a `.torrent` file. The trackers and info bytes are applied to the torrent matching the info hash provided in the query. No fields in the metainfo are mandatory.
+-	`GET /metainfo?ih=<infohash in hex>`. returns a .torrent file containing the hash info.
