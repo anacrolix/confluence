@@ -117,6 +117,14 @@ func fileStateHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(f.State())
 }
 
+func metainfoHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		metainfoPostHandler(w, r)
+		return
+	}
+	metainfoGetHandler(w, r)
+}
+
 func metainfoPostHandler(w http.ResponseWriter, r *http.Request) {
 	var mi metainfo.MetaInfo
 	err := bencode.NewDecoder(r.Body).Decode(&mi)
