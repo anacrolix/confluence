@@ -22,10 +22,12 @@ func torrentFileByPath(t *torrent.Torrent, path_ string) *torrent.File {
 	return nil
 }
 
-func saveTorrentFile(t *torrent.Torrent) (err error) {
-	path_ := filepath.Join("torrents", t.InfoHash().HexString()+".torrent")
-	os.MkdirAll(filepath.Dir(path_), 0750)
-	f, err := os.OpenFile(path_, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+func saveTorrentFile(t *torrent.Torrent, r *http.Request) (err error) {
+	h := getHandler(r)
+	dir := h.cachePath(t.InfoHash().HexString())
+	p := filepath.Join(dir, t.InfoHash().HexString()+".torrent")
+	os.MkdirAll(dir, 0750)
+	f, err := os.OpenFile(p, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
 	if err != nil {
 		return
 	}

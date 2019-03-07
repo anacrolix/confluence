@@ -135,5 +135,5 @@ func metainfoPostHandler(w http.ResponseWriter, r *http.Request) {
 	t := torrentForRequest(r)
 	t.AddTrackers(mi.UpvertedAnnounceList())
 	t.SetInfoBytes(mi.InfoBytes)
-	saveTorrentFile(t)
+	saveTorrentFile(t, r)
 }
