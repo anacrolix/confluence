@@ -10,10 +10,8 @@ import (
 
 func init() {
 	prometheus.MustRegister(prometheus.NewExpvarCollector(map[string]*prometheus.Desc{
-		"torrent": prometheus.NewDesc("expvar_torrent", "", []string{"key"}, nil),
-	}))
-	prometheus.MustRegister(prometheus.NewExpvarCollector(map[string]*prometheus.Desc{
-		"go-libutp": prometheus.NewDesc("go_libutp", "", []string{"key"}, nil),
+		"torrent":   prometheus.NewDesc("expvar_torrent", "", []string{"key"}, nil),
+		"go-libutp": prometheus.NewDesc("expvar_go_libutp", "", []string{"key"}, nil),
 	}))
 	http.Handle("/metrics", promhttp.Handler())
 }
