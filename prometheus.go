@@ -3,16 +3,14 @@ package main
 import (
 	"net/http"
 
+	xprometheus "github.com/anacrolix/missinggo/prometheus"
 	"github.com/anacrolix/torrent"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func init() {
-	prometheus.MustRegister(prometheus.NewExpvarCollector(map[string]*prometheus.Desc{
-		"torrent":   prometheus.NewDesc("expvar_torrent", "", []string{"key"}, nil),
-		"go-libutp": prometheus.NewDesc("expvar_go_libutp", "", []string{"key"}, nil),
-	}))
+	prometheus.MustRegister(xprometheus.NewExpvarCollector())
 	http.Handle("/metrics", promhttp.Handler())
 }
 
