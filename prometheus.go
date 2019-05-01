@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	xprometheus "github.com/anacrolix/missinggo/prometheus"
+	xprometheus "github.com/anacrolix/missinggo/v2/prometheus"
 	"github.com/anacrolix/torrent"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
