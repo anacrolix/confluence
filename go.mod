@@ -2,7 +2,8 @@ module github.com/anacrolix/confluence
 
 require (
 	github.com/anacrolix/envpprof v1.0.0
-	github.com/anacrolix/missinggo v1.1.0
+	github.com/anacrolix/missinggo v1.1.2-0.20190815015349-b888af804467
+	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/missinggo/v2 v2.1.0
 	github.com/anacrolix/tagflag v1.0.0
 	github.com/anacrolix/torrent v1.1.2
