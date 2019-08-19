@@ -28,7 +28,7 @@ var flags = struct {
 	UnlimitedCache     bool          `help:"Don't limit cache capacity"`
 	CacheCapacity      tagflag.Bytes `help:"Data cache capacity"`
 	TorrentGrace       time.Duration `help:"How long to wait to drop a torrent after its last request"`
-	FileDir            string        `help:"File-based storage directory, overrides piece storage"`
+	FileDir            string        `help:"File-based storage and torrent files cache directory, overrides piece storage"`
 	Seed               bool          `help:"Seed data"`
 	UPnPPortForwarding bool          `help:"Port forward via UPnP"`
 	// You'd want this if access to the main HTTP service is trusted, such as
@@ -140,13 +140,14 @@ func main() {
 	defer l.Close()
 	log.Printf("serving http at %s", l.Addr())
 	var h http.Handler = &confluence.Handler{
-		cl,
-		flags.TorrentGrace,
-		func(t *torrent.Torrent) {
+		TC:           cl,
+		TorrentGrace: flags.TorrentGrace,
+		OnTorrentGrace: func(t *torrent.Torrent) {
 			ih := t.InfoHash()
 			t.Drop()
 			onTorrentGraceExtra(ih)
 		},
+		CacheDir: flags.FileDir,
 	}
 	if flags.DebugOnMain {
 		h = func() http.Handler {
