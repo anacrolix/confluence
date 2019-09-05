@@ -5,7 +5,7 @@ require (
 	github.com/anacrolix/missinggo v1.2.1
 	github.com/anacrolix/missinggo/v2 v2.1.0
 	github.com/anacrolix/tagflag v1.0.0
-	github.com/anacrolix/torrent v1.7.0
+	github.com/anacrolix/torrent v1.7.1
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20190328170749-bb2674552d8f // indirect
 	github.com/justinas/alice v0.0.0-20171023064455-03f45bd4b7da
