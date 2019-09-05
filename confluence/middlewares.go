@@ -31,7 +31,11 @@ func getTorrentHandle(r *http.Request, ih metainfo.Hash) *torrent.Torrent {
 	ref := torrentRefs.NewRef(ih)
 	tc := h.TC
 	t, new := tc.AddTorrentInfoHash(ih)
-	ref.SetCloser(func() { h.OnTorrentGrace(t) })
+	ref.SetCloser(func() {
+		if h.OnTorrentGrace != nil {
+			h.OnTorrentGrace(t)
+		}
+	})
 	go func() {
 		defer time.AfterFunc(h.TorrentGrace, ref.Release)
 		<-r.Context().Done()
