@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"time"
 
@@ -13,24 +12,12 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-const infohashQueryKey = "ih"
-
-func infohashFromQueryOrServeError(w http.ResponseWriter, q url.Values) (ih metainfo.Hash, ok bool) {
-	if err := ih.FromHexString(q.Get(infohashQueryKey)); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	ok = true
-	return
-}
-
-// Handles ref counting, torrent grace, and various torrent client wrapping
-// work.
-func getTorrentHandle(r *http.Request, ih metainfo.Hash) *torrent.Torrent {
+// Returns a Torrent for the infohash with a ref that expires when the Request's context closes.
+func getTorrentHandle(r *http.Request, ih metainfo.Hash) (t *torrent.Torrent, new bool) {
 	h := getHandler(r)
 	ref := torrentRefs.NewRef(ih)
 	tc := h.TC
-	t, new := tc.AddTorrentInfoHash(ih)
+	t, new = tc.AddTorrentInfoHash(ih)
 	ref.SetCloser(func() {
 		if h.OnTorrentGrace != nil {
 			h.OnTorrentGrace(t)
@@ -40,24 +27,54 @@ func getTorrentHandle(r *http.Request, ih metainfo.Hash) *torrent.Torrent {
 		defer time.AfterFunc(h.TorrentGrace, ref.Release)
 		<-r.Context().Done()
 	}()
-	if new {
-		mi := cachedMetaInfo(ih)
-		if mi != nil {
-			t.AddTrackers(mi.UpvertedAnnounceList())
-			t.SetInfoBytes(mi.InfoBytes)
-		}
-		go saveTorrentWhenGotInfo(t)
-	}
-	return t
+	return
 }
+
+const (
+	infohashQueryKey = "ih"
+	magnetQueryKey   = "magnet"
+)
 
 func withTorrentContext(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ih, ok := infohashFromQueryOrServeError(w, r.URL.Query())
-		if !ok {
+		ih, err, afterAdd := func() (ih metainfo.Hash, err error, afterAdd func(t *torrent.Torrent)) {
+			q := r.URL.Query()
+			ms := q.Get("magnet")
+			if ms != "" {
+				m, err := metainfo.ParseMagnetURI(ms)
+				if err != nil {
+					return metainfo.Hash{}, fmt.Errorf("parsing magnet: %w", err), nil
+				}
+				return m.InfoHash, nil, func(t *torrent.Torrent) {
+					ts := [][]string{m.Trackers}
+					//log.Printf("adding trackers %v", ts)
+					t.AddTrackers(ts)
+				}
+			}
+			if ihqv := q.Get(infohashQueryKey); ihqv != "" {
+				err = ih.FromHexString(q.Get(infohashQueryKey))
+				return
+			}
+			err = fmt.Errorf("expected nonempty query parameter %q or %q", magnetQueryKey, infohashQueryKey)
+			return
+		}()
+		if err != nil {
+			http.Error(w, fmt.Errorf("error determining requested infohash: %w", err).Error(), http.StatusBadRequest)
 			return
 		}
-		t := getTorrentHandle(r, ih)
+		t, new := getTorrentHandle(r, ih)
+		if new {
+			mi := cachedMetaInfo(ih)
+			if mi != nil {
+				t.AddTrackers(mi.UpvertedAnnounceList())
+				t.SetInfoBytes(mi.InfoBytes)
+			}
+			go saveTorrentWhenGotInfo(t)
+		}
+		if afterAdd != nil {
+			afterAdd(t)
+		}
+		saveTorrentFile(t)
 		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), torrentContextKey, t)))
 	})
 }
