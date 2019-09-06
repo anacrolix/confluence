@@ -140,9 +140,9 @@ func main() {
 	defer l.Close()
 	log.Printf("serving http at %s", l.Addr())
 	var h http.Handler = &confluence.Handler{
-		cl,
-		flags.TorrentGrace,
-		func(t *torrent.Torrent) {
+		TC:           cl,
+		TorrentGrace: flags.TorrentGrace,
+		OnTorrentGrace: func(t *torrent.Torrent) {
 			ih := t.InfoHash()
 			t.Drop()
 			onTorrentGraceExtra(ih)
