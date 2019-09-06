@@ -13,63 +13,57 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func dataHandler(w http.ResponseWriter, r *http.Request) {
+func dataHandler(w http.ResponseWriter, r *request) {
 	q := r.URL.Query()
-	t := torrentForRequest(r)
+	t := r.torrent
 	if len(q["path"]) == 0 {
-		serveTorrent(w, r, t)
+		serveTorrent(w, r.Request, t)
 	} else {
-		serveFile(w, r, t, q.Get("path"))
+		serveFile(w, r.Request, t, q.Get("path"))
 	}
 }
 
-func statusHandler(w http.ResponseWriter, r *http.Request) {
-	getHandler(r).TC.WriteStatus(w)
+func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
+	h.TC.WriteStatus(w)
 }
 
-func findTorrent(w http.ResponseWriter, r *http.Request) *torrent.Torrent {
-	t := torrentForRequest(r)
+func waitForTorrentInfo(w http.ResponseWriter, r *request) bool {
+	t := r.torrent
 	if nowait, err := strconv.ParseBool(r.URL.Query().Get("nowait")); err == nil && nowait {
 		select {
 		case <-t.GotInfo():
 		default:
 			http.Error(w, "info not ready", http.StatusAccepted)
-			return nil
+			return false
 		}
 	} else {
-		// w.WriteHeader(http.StatusProcessing)
 		select {
 		case <-t.GotInfo():
 		case <-r.Context().Done():
-			return nil
+			return false
 		}
 	}
-
-	// w.WriteHeader(http.StatusOK)
-
-	return t
+	return true
 }
 
-func infoHandler(w http.ResponseWriter, r *http.Request) {
-	t := findTorrent(w, r)
-	if t == nil {
+func infoHandler(w http.ResponseWriter, r *request) {
+	if !waitForTorrentInfo(w, r) {
 		return
 	}
-	mi := t.Metainfo()
+	mi := r.torrent.Metainfo()
 	w.Write(mi.InfoBytes)
 }
 
-func metainfoGetHandler(w http.ResponseWriter, r *http.Request) {
-	t := findTorrent(w, r)
-	if t == nil {
+func metainfoGetHandler(w http.ResponseWriter, r *request) {
+	if !waitForTorrentInfo(w, r) {
 		return
 	}
 	w.Header().Add("Content-Type", "application/x-bittorrent")
-	t.Metainfo().Write(w)
+	r.torrent.Metainfo().Write(w)
 }
 
-func eventHandler(w http.ResponseWriter, r *http.Request) {
-	t := torrentForRequest(r)
+func eventHandler(w http.ResponseWriter, r *request) {
+	t := r.torrent
 	select {
 	case <-t.GotInfo():
 	case <-r.Context().Done():
@@ -104,12 +98,12 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		},
-	}.ServeHTTP(w, r)
+	}.ServeHTTP(w, r.Request)
 }
 
-func fileStateHandler(w http.ResponseWriter, r *http.Request) {
+func fileStateHandler(w http.ResponseWriter, r *request) {
 	path_ := r.URL.Query().Get("path")
-	f := torrentFileByPath(torrentForRequest(r), path_)
+	f := torrentFileByPath(r.torrent, path_)
 	if f == nil {
 		http.Error(w, "file not found", http.StatusNotFound)
 		return
@@ -117,7 +111,7 @@ func fileStateHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(f.State())
 }
 
-func metainfoHandler(w http.ResponseWriter, r *http.Request) {
+func metainfoHandler(w http.ResponseWriter, r *request) {
 	if r.Method == "POST" {
 		metainfoPostHandler(w, r)
 		return
@@ -125,14 +119,14 @@ func metainfoHandler(w http.ResponseWriter, r *http.Request) {
 	metainfoGetHandler(w, r)
 }
 
-func metainfoPostHandler(w http.ResponseWriter, r *http.Request) {
+func metainfoPostHandler(w http.ResponseWriter, r *request) {
 	var mi metainfo.MetaInfo
 	err := bencode.NewDecoder(r.Body).Decode(&mi)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error decoding body: %s", err), http.StatusBadRequest)
 		return
 	}
-	t := torrentForRequest(r)
+	t := r.torrent
 	t.AddTrackers(mi.UpvertedAnnounceList())
 	t.SetInfoBytes(mi.InfoBytes)
 	saveTorrentFile(t)

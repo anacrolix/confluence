@@ -1,7 +1,6 @@
 package confluence
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,8 +12,7 @@ import (
 )
 
 // Returns a Torrent for the infohash with a ref that expires when the Request's context closes.
-func getTorrentHandle(r *http.Request, ih metainfo.Hash) (t *torrent.Torrent, new bool) {
-	h := getHandler(r)
+func (h *Handler) getTorrentHandle(r *http.Request, ih metainfo.Hash) (t *torrent.Torrent, new bool) {
 	ref := torrentRefs.NewRef(ih)
 	tc := h.TC
 	t, new = tc.AddTorrentInfoHash(ih)
@@ -35,7 +33,13 @@ const (
 	magnetQueryKey   = "magnet"
 )
 
-func withTorrentContext(h http.Handler) http.Handler {
+type request struct {
+	torrent *torrent.Torrent
+	handler *Handler
+	*http.Request
+}
+
+func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ih, err, afterAdd := func() (ih metainfo.Hash, err error, afterAdd func(t *torrent.Torrent)) {
 			q := r.URL.Query()
@@ -62,7 +66,7 @@ func withTorrentContext(h http.Handler) http.Handler {
 			http.Error(w, fmt.Errorf("error determining requested infohash: %w", err).Error(), http.StatusBadRequest)
 			return
 		}
-		t, new := getTorrentHandle(r, ih)
+		t, new := me.getTorrentHandle(r, ih)
 		if new {
 			mi := cachedMetaInfo(ih)
 			if mi != nil {
@@ -75,7 +79,7 @@ func withTorrentContext(h http.Handler) http.Handler {
 			afterAdd(t)
 		}
 		saveTorrentFile(t)
-		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), torrentContextKey, t)))
+		h(w, &request{t, me, r})
 	})
 }
 

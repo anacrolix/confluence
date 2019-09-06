@@ -4,19 +4,21 @@ import (
 	"net/http"
 
 	"github.com/anacrolix/missinggo/httptoo"
-	"github.com/justinas/alice"
 )
 
-var mux = http.NewServeMux()
-
-func init() {
-	mux.Handle("/data", alice.New(withTorrentContext).ThenFunc(dataHandler))
-	mux.HandleFunc("/status", statusHandler)
-	mux.Handle("/info", alice.New(withTorrentContext).ThenFunc(infoHandler))
-	mux.Handle("/events", alice.New(withTorrentContext).ThenFunc(eventHandler))
-	mux.Handle("/fileState", alice.New(
-		withTorrentContext,
-		httptoo.GzipHandler,
-	).ThenFunc(fileStateHandler))
-	mux.Handle("/metainfo", alice.New(withTorrentContext).ThenFunc(metainfoHandler))
+func (h *Handler) initMux() {
+	h.initMuxOnce.Do(func() {
+		mux := &h.mux
+		mux.Handle("/data", h.withTorrentContext(dataHandler))
+		mux.HandleFunc("/status", h.statusHandler)
+		mux.Handle("/info", h.withTorrentContext(infoHandler))
+		mux.Handle("/events", h.withTorrentContext(eventHandler))
+		mux.Handle("/fileState", h.withTorrentContext(func(w http.ResponseWriter, r *request) {
+			httptoo.GzipHandler(http.HandlerFunc(func(w http.ResponseWriter, hr *http.Request) {
+				r.Request = hr
+				fileStateHandler(w, r)
+			})).ServeHTTP(w, r.Request)
+		}))
+		mux.Handle("/metainfo", h.withTorrentContext(metainfoHandler))
+	})
 }

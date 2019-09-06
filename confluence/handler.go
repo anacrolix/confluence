@@ -1,8 +1,8 @@
 package confluence
 
 import (
-	"context"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -12,9 +12,11 @@ type Handler struct {
 	TC             *torrent.Client
 	TorrentGrace   time.Duration
 	OnTorrentGrace func(t *torrent.Torrent)
+	mux            http.ServeMux
+	initMuxOnce    sync.Once
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r = r.WithContext(context.WithValue(r.Context(), handlerContextKey, h))
-	mux.ServeHTTP(w, r)
+	h.initMux()
+	h.mux.ServeHTTP(w, r)
 }
