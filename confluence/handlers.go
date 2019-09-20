@@ -54,7 +54,7 @@ func infoHandler(w http.ResponseWriter, r *request) {
 	w.Write(mi.InfoBytes)
 }
 
-func metainfoGetHandler(w http.ResponseWriter, r *request) {
+func (h *Handler) metainfoGetHandler(w http.ResponseWriter, r *request) {
 	if !waitForTorrentInfo(w, r) {
 		return
 	}
@@ -111,22 +111,27 @@ func fileStateHandler(w http.ResponseWriter, r *request) {
 	json.NewEncoder(w).Encode(f.State())
 }
 
-func metainfoHandler(w http.ResponseWriter, r *request) {
+func (h *Handler) metainfoHandler(w http.ResponseWriter, r *request) {
 	if r.Method == "POST" {
-		metainfoPostHandler(w, r)
+		h.metainfoPostHandler(w, r)
 		return
 	}
-	metainfoGetHandler(w, r)
+	h.metainfoGetHandler(w, r)
 }
 
-func metainfoPostHandler(w http.ResponseWriter, r *request) {
+func (h *Handler) metainfoPostHandler(w http.ResponseWriter, r *request) {
 	var mi metainfo.MetaInfo
 	err := bencode.NewDecoder(r.Body).Decode(&mi)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error decoding body: %s", err), http.StatusBadRequest)
 		return
 	}
-	t := r.torrent
+	h.PutMetainfo(r.torrent, &mi)
+}
+
+// We require the Torrent to be given to ensure we don't infer a torrent from the MetaInfo without
+// any release semantics.
+func (h *Handler) PutMetainfo(t *torrent.Torrent, mi *metainfo.MetaInfo) {
 	t.AddTrackers(mi.UpvertedAnnounceList())
 	t.SetInfoBytes(mi.InfoBytes)
 	saveTorrentFile(t)

@@ -11,20 +11,15 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-// Returns a Torrent for the infohash with a ref that expires when the Request's context closes.
-func (h *Handler) getTorrentHandle(r *http.Request, ih metainfo.Hash) (t *torrent.Torrent, new bool) {
-	ref := torrentRefs.NewRef(ih)
-	tc := h.TC
-	t, new = tc.AddTorrentInfoHash(ih)
+func (h *Handler) GetTorrent(ih metainfo.Hash) (t *torrent.Torrent, new bool, release func()) {
+	ref := h.torrentRefs.NewRef(ih)
+	t, new = h.TC.AddTorrentInfoHash(ih)
 	ref.SetCloser(func() {
 		if h.OnTorrentGrace != nil {
 			h.OnTorrentGrace(t)
 		}
 	})
-	go func() {
-		defer time.AfterFunc(h.TorrentGrace, ref.Release)
-		<-r.Context().Done()
-	}()
+	release = func() { time.AfterFunc(h.TorrentGrace, ref.Release) }
 	return
 }
 
@@ -66,7 +61,8 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request))
 			http.Error(w, fmt.Errorf("error determining requested infohash: %w", err).Error(), http.StatusBadRequest)
 			return
 		}
-		t, new := me.getTorrentHandle(r, ih)
+		t, new, release := me.GetTorrent(ih)
+		defer release()
 		if new {
 			mi := cachedMetaInfo(ih)
 			if mi != nil {

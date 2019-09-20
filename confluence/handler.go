@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/anacrolix/missinggo/refclose"
 	"github.com/anacrolix/torrent"
 )
 
@@ -14,6 +15,7 @@ type Handler struct {
 	OnTorrentGrace func(t *torrent.Torrent)
 	mux            http.ServeMux
 	initMuxOnce    sync.Once
+	torrentRefs    refclose.RefPool
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -19,6 +19,6 @@ func (h *Handler) initMux() {
 				fileStateHandler(w, r)
 			})).ServeHTTP(w, r.Request)
 		}))
-		mux.Handle("/metainfo", h.withTorrentContext(metainfoHandler))
+		mux.Handle("/metainfo", h.withTorrentContext(h.metainfoHandler))
 	})
 }
