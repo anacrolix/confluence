@@ -17,9 +17,9 @@ func dataHandler(w http.ResponseWriter, r *request) {
 	q := r.URL.Query()
 	t := r.torrent
 	if len(q["path"]) == 0 {
-		serveTorrent(w, r.Request, t)
+		ServeTorrent(w, r.Request, t)
 	} else {
-		serveFile(w, r.Request, t, q.Get("path"))
+		ServeFile(w, r.Request, t, q.Get("path"))
 	}
 }
 

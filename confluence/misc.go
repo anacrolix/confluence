@@ -33,16 +33,16 @@ func saveTorrentFile(t *torrent.Torrent) (err error) {
 	return t.Metainfo().Write(f)
 }
 
-func serveTorrent(w http.ResponseWriter, r *http.Request, t *torrent.Torrent) {
+func ServeTorrent(w http.ResponseWriter, r *http.Request, t *torrent.Torrent) {
 	select {
 	case <-t.GotInfo():
 	case <-r.Context().Done():
 		return
 	}
-	serveReader(w, r, t.NewReader(), t.Name())
+	ServeTorrentReader(w, r, t.NewReader(), t.Name())
 }
 
-func serveReader(w http.ResponseWriter, r *http.Request, tr torrent.Reader, name string) {
+func ServeTorrentReader(w http.ResponseWriter, r *http.Request, tr torrent.Reader, name string) {
 	defer tr.Close()
 	tr.SetReadahead(48 << 20)
 	rs := struct {
@@ -60,7 +60,7 @@ func serveReader(w http.ResponseWriter, r *http.Request, tr torrent.Reader, name
 	http.ServeContent(w, r, name, time.Time{}, rs)
 }
 
-func serveFile(w http.ResponseWriter, r *http.Request, t *torrent.Torrent, _path string) {
+func ServeFile(w http.ResponseWriter, r *http.Request, t *torrent.Torrent, _path string) {
 	select {
 	case <-r.Context().Done():
 		http.Error(w, "request canceled", httptoo.StatusClientCancelledRequest)
@@ -73,5 +73,5 @@ func serveFile(w http.ResponseWriter, r *http.Request, t *torrent.Torrent, _path
 		return
 	}
 	// w.Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", t.InfoHash().HexString(), _path)))
-	serveReader(w, r, tf.NewReader(), _path)
+	ServeTorrentReader(w, r, tf.NewReader(), _path)
 }
