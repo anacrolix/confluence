@@ -135,8 +135,13 @@ func (h *Handler) metainfoPostHandler(w http.ResponseWriter, r *request) {
 
 // We require the Torrent to be given to ensure we don't infer a torrent from the MetaInfo without
 // any release semantics.
-func (h *Handler) PutMetainfo(t *torrent.Torrent, mi *metainfo.MetaInfo) {
+func (h *Handler) PutMetainfo(t *torrent.Torrent, mi *metainfo.MetaInfo) error {
+	// TODO(anacrolix): Should probably extract merge-style behaviour that Client.AddTorrent
+	// contains.
 	t.AddTrackers(mi.UpvertedAnnounceList())
-	t.SetInfoBytes(mi.InfoBytes)
-	saveTorrentFile(t)
+	err := t.SetInfoBytes(mi.InfoBytes)
+	if err != nil {
+		return err
+	}
+	return saveTorrentFile(t)
 }
