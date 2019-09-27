@@ -14,12 +14,17 @@ import (
 func (h *Handler) GetTorrent(ih metainfo.Hash) (t *torrent.Torrent, new bool, release func()) {
 	ref := h.torrentRefs.NewRef(ih)
 	t, new = h.TC.AddTorrentInfoHash(ih)
+	//log.Printf("added ref for %v", ih)
 	ref.SetCloser(func() {
+		//log.Printf("running torrent ref closer for %v", ih)
 		if h.OnTorrentGrace != nil {
 			h.OnTorrentGrace(t)
 		}
 	})
-	release = func() { time.AfterFunc(h.TorrentGrace, ref.Release) }
+	release = func() {
+		//log.Printf("releasing ref on %v", ih)
+		time.AfterFunc(h.TorrentGrace, ref.Release)
+	}
 	return
 }
 
