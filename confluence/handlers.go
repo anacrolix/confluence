@@ -87,7 +87,11 @@ func eventHandler(w http.ResponseWriter, r *request) {
 				case <-r.Context().Done():
 					eventHandlerContextDone.Add(1)
 					return
-				case _i := <-s.Values:
+				case _i, ok := <-s.Values:
+					if !ok {
+						log.Printf("event handler subscription closed for %v; returning", t.InfoHash())
+						return
+					}
 					i := _i.(torrent.PieceStateChange).Index
 					if err := websocket.JSON.Send(c, Event{PieceChanged: &i}); err != nil {
 						if r.Context().Err() == nil {
