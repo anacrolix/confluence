@@ -18,7 +18,7 @@ type Handler struct {
 	torrentRefs    refclose.RefPool
 }
 
-func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.initMux()
 	h.mux.ServeHTTP(w, r)
 }
