@@ -143,5 +143,5 @@ func (h *Handler) PutMetainfo(t *torrent.Torrent, mi *metainfo.MetaInfo) error {
 	if err != nil {
 		return err
 	}
-	return saveTorrentFile(t)
+	return h.saveTorrentFile(t)
 }

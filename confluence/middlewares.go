@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -69,34 +70,34 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request))
 		t, new, release := me.GetTorrent(ih)
 		defer release()
 		if new {
-			mi := cachedMetaInfo(ih)
+			mi := me.cachedMetaInfo(ih)
 			if mi != nil {
 				t.AddTrackers(mi.UpvertedAnnounceList())
 				t.SetInfoBytes(mi.InfoBytes)
 			}
-			go saveTorrentWhenGotInfo(t)
+			go me.saveTorrentWhenGotInfo(t)
 		}
 		if afterAdd != nil {
 			afterAdd(t)
 		}
-		saveTorrentFile(t)
+		me.saveTorrentFile(t)
 		h(w, &request{t, me, r})
 	})
 }
 
-func saveTorrentWhenGotInfo(t *torrent.Torrent) {
+func (h *Handler) saveTorrentWhenGotInfo(t *torrent.Torrent) {
 	select {
 	case <-t.Closed():
 	case <-t.GotInfo():
 	}
-	err := saveTorrentFile(t)
+	err := h.saveTorrentFile(t)
 	if err != nil {
 		log.Printf("error saving torrent file: %s", err)
 	}
 }
 
-func cachedMetaInfo(infoHash metainfo.Hash) *metainfo.MetaInfo {
-	p := fmt.Sprintf("torrents/%s.torrent", infoHash.HexString())
+func (h *Handler) cachedMetaInfo(infoHash metainfo.Hash) *metainfo.MetaInfo {
+	p := filepath.Join(h.metainfoCacheDir(), infoHash.HexString()+".torrent")
 	mi, err := metainfo.LoadFromFile(p)
 	if os.IsNotExist(err) {
 		return nil
