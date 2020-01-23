@@ -10,8 +10,8 @@ import (
 	"time"
 
 	_ "github.com/anacrolix/envpprof"
-	"github.com/anacrolix/missinggo/filecache"
-	"github.com/anacrolix/missinggo/resource"
+	"github.com/anacrolix/missinggo/v2/filecache"
+	"github.com/anacrolix/missinggo/v2/resource"
 	"github.com/anacrolix/missinggo/x"
 	"github.com/anacrolix/tagflag"
 	"github.com/anacrolix/torrent"

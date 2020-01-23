@@ -3,7 +3,7 @@ package confluence
 import (
 	"log"
 
-	"github.com/anacrolix/missinggo/filecache"
+	"github.com/anacrolix/missinggo/v2/filecache"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/iplist"
 	"github.com/anacrolix/torrent/storage"
