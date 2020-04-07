@@ -51,7 +51,43 @@ func infoHandler(w http.ResponseWriter, r *request) {
 		return
 	}
 	mi := r.torrent.Metainfo()
-	w.Write(mi.InfoBytes)
+	switch r.Header.Get("Accept") {
+	case "application/json":
+		nodes := make([]string, len(mi.Nodes))
+		for _, n := range mi.Nodes {
+			nodes = append(nodes, string(n))
+		}
+		announceList := [][]string{}
+		if mi.AnnounceList != nil {
+			announceList = mi.AnnounceList
+		}
+		urlList := []string{}
+		if mi.UrlList != nil {
+			urlList = mi.UrlList
+		}
+		enc := json.NewEncoder(w)
+		enc.Encode(struct {
+			Announce     string     `json:"announce"`
+			AnnounceList [][]string `json:"announceList"`
+			Nodes        []string   `json:"nodes"`
+			CreationDate int64      `json:"creationDate"`
+			Comment      string     `json:"comment,omitempty"`
+			CreatedBy    string     `json:"createdBy"`
+			Encoding     string     `json:"encoding"`
+			UrlList      []string   `json:"urlList"`
+		}{
+			Announce:     mi.Announce,
+			AnnounceList: announceList,
+			Nodes:        nodes,
+			CreationDate: mi.CreationDate,
+			Comment:      mi.Comment,
+			CreatedBy:    mi.CreatedBy,
+			Encoding:     mi.Encoding,
+			UrlList:      urlList,
+		})
+	default:
+		w.Write(mi.InfoBytes)
+	}
 }
 
 func (h *Handler) metainfoGetHandler(w http.ResponseWriter, r *request) {
