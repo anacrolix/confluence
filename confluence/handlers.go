@@ -67,14 +67,14 @@ func infoHandler(w http.ResponseWriter, r *request) {
 		}
 		enc := json.NewEncoder(w)
 		enc.Encode(struct {
-			Announce     string     `json:"announce"`
-			AnnounceList [][]string `json:"announceList"`
-			Nodes        []string   `json:"nodes"`
-			CreationDate int64      `json:"creationDate"`
-			Comment      string     `json:"comment,omitempty"`
-			CreatedBy    string     `json:"createdBy"`
-			Encoding     string     `json:"encoding"`
-			UrlList      []string   `json:"urlList"`
+			Announce     string
+			AnnounceList [][]string
+			Nodes        []string
+			CreationDate int64
+			Comment      string
+			CreatedBy    string
+			Encoding     string
+			UrlList      []string
 		}{
 			Announce:     mi.Announce,
 			AnnounceList: announceList,
