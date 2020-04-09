@@ -57,33 +57,25 @@ func infoHandler(w http.ResponseWriter, r *request) {
 		for _, n := range mi.Nodes {
 			nodes = append(nodes, string(n))
 		}
-		announceList := [][]string{}
-		if mi.AnnounceList != nil {
-			announceList = mi.AnnounceList
-		}
-		urlList := []string{}
-		if mi.UrlList != nil {
-			urlList = mi.UrlList
-		}
 		enc := json.NewEncoder(w)
 		enc.Encode(struct {
-			Announce     string
-			AnnounceList [][]string
-			Nodes        []string
-			CreationDate int64
-			Comment      string
-			CreatedBy    string
-			Encoding     string
-			UrlList      []string
+			Announce     string     `json:",omitempty"`
+			AnnounceList [][]string `json:",omitempty"`
+			Nodes        []string   `json:",omitempty"`
+			CreationDate int64      `json:",omitempty"`
+			Comment      string     `json:",omitempty"`
+			CreatedBy    string     `json:",omitempty"`
+			Encoding     string     `json:",omitempty"`
+			UrlList      []string   `json:",omitempty"`
 		}{
 			Announce:     mi.Announce,
-			AnnounceList: announceList,
+			AnnounceList: mi.AnnounceList,
 			Nodes:        nodes,
 			CreationDate: mi.CreationDate,
 			Comment:      mi.Comment,
 			CreatedBy:    mi.CreatedBy,
 			Encoding:     mi.Encoding,
-			UrlList:      urlList,
+			UrlList:      mi.UrlList,
 		})
 	default:
 		w.Write(mi.InfoBytes)
