@@ -36,11 +36,15 @@ var flags = struct {
 	DebugOnMain     bool `help:"Expose default serve mux /debug/ endpoints over http"`
 	Dht             bool
 	DisableTrackers bool
+	TcpPeers        bool
+	UtpPeers        bool
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
 	TorrentGrace:  time.Minute,
 	Dht:           true,
+	TcpPeers:      true,
+	UtpPeers:      true,
 }
 
 func newTorrentClient(storage storage.ClientImpl) (ret *torrent.Client, err error) {
@@ -60,6 +64,8 @@ func newTorrentClient(storage storage.ClientImpl) (ret *torrent.Client, err erro
 		}()
 	}
 	cfg := torrent.NewDefaultClientConfig()
+	cfg.DisableTCP = !flags.TcpPeers
+	cfg.DisableUTP = !flags.UtpPeers
 	cfg.IPBlocklist = blocklist
 	cfg.DefaultStorage = storage
 	cfg.PublicIp4 = flags.PublicIp4
