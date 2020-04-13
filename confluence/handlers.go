@@ -54,14 +54,6 @@ func infoHandler(w http.ResponseWriter, r *request) {
 	w.Write(mi.InfoBytes)
 }
 
-func (h *Handler) metainfoGetHandler(w http.ResponseWriter, r *request) {
-	if !waitForTorrentInfo(w, r) {
-		return
-	}
-	w.Header().Add("Content-Type", "application/x-bittorrent")
-	r.torrent.Metainfo().Write(w)
-}
-
 func eventHandler(w http.ResponseWriter, r *request) {
 	t := r.torrent
 	select {
@@ -120,7 +112,45 @@ func (h *Handler) metainfoHandler(w http.ResponseWriter, r *request) {
 		h.metainfoPostHandler(w, r)
 		return
 	}
-	h.metainfoGetHandler(w, r)
+
+	if !waitForTorrentInfo(w, r) {
+		return
+	}
+	mi := r.torrent.Metainfo()
+
+	switch r.Header.Get("Accept") {
+	case "application/json":
+		w.Header().Add("Content-Type", "application/json")
+		nodes := make([]string, len(mi.Nodes))
+		for _, n := range mi.Nodes {
+			nodes = append(nodes, string(n))
+		}
+		enc := json.NewEncoder(w)
+		enc.Encode(struct {
+			Info         []byte     `json:"info,omitempty"`
+			Announce     string     `json:"announce,omitempty"`
+			AnnounceList [][]string `json:"announceList,omitempty"`
+			Nodes        []string   `json:"nodes,omitempty"`
+			CreationDate int64      `json:"creationDate,omitempty"`
+			Comment      string     `json:"comment,omitempty"`
+			CreatedBy    string     `json:"createdBy,omitempty"`
+			Encoding     string     `json:"encoding,omitempty"`
+			UrlList      []string   `json:"urlList,omitempty"`
+		}{
+			Info:         mi.InfoBytes,
+			Announce:     mi.Announce,
+			AnnounceList: mi.AnnounceList,
+			Nodes:        nodes,
+			CreationDate: mi.CreationDate,
+			Comment:      mi.Comment,
+			CreatedBy:    mi.CreatedBy,
+			Encoding:     mi.Encoding,
+			UrlList:      mi.UrlList,
+		})
+	default:
+		w.Header().Add("Content-Type", "application/x-bittorrent")
+		mi.Write(w)
+	}
 }
 
 func (h *Handler) metainfoPostHandler(w http.ResponseWriter, r *request) {
