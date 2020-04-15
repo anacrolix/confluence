@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/anacrolix/confluence/confluence"
 	_ "github.com/anacrolix/envpprof"
+	utp "github.com/anacrolix/go-libutp"
 	"github.com/anacrolix/missinggo/v2/filecache"
 	"github.com/anacrolix/missinggo/v2/resource"
 	"github.com/anacrolix/missinggo/x"
@@ -17,8 +19,6 @@ import (
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/iplist"
 	"github.com/anacrolix/torrent/storage"
-
-	"github.com/anacrolix/confluence/confluence"
 )
 
 var flags = struct {
@@ -139,6 +139,9 @@ func main() {
 		for _, ds := range cl.DhtServers() {
 			ds.WriteStatus(w)
 		}
+	})
+	http.HandleFunc("/debug/utp", func(w http.ResponseWriter, r *http.Request) {
+		utp.WriteStatus(w)
 	})
 	l, err := net.Listen("tcp", flags.Addr)
 	if err != nil {
