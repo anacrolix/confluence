@@ -31,13 +31,14 @@ var flags = struct {
 	FileDir            string        `help:"File-based storage directory, overrides piece storage"`
 	Seed               bool          `help:"Seed data"`
 	UPnPPortForwarding bool          `help:"Port forward via UPnP"`
-	// You'd want this if access to the main HTTP service is trusted, such as
-	// used over localhost by other known services.
+	// You'd want this if access to the main HTTP service is trusted, such as used over localhost by
+	// other known services.
 	DebugOnMain     bool `help:"Expose default serve mux /debug/ endpoints over http"`
 	Dht             bool
 	DisableTrackers bool
 	TcpPeers        bool
 	UtpPeers        bool
+	ImpliedTracker  []string
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
@@ -152,6 +153,9 @@ func main() {
 			ih := t.InfoHash()
 			t.Drop()
 			onTorrentGraceExtra(ih)
+		},
+		OnNewTorrent: func(t *torrent.Torrent) {
+			t.AddTrackers([][]string{flags.ImpliedTracker})
 		},
 	}
 	if flags.DebugOnMain {

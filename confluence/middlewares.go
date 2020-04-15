@@ -70,6 +70,9 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request))
 		t, new, release := me.GetTorrent(ih)
 		defer release()
 		if new {
+			if me.OnNewTorrent != nil {
+				me.OnNewTorrent(t)
+			}
 			mi := me.cachedMetaInfo(ih)
 			if mi != nil {
 				t.AddTrackers(mi.UpvertedAnnounceList())

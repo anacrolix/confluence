@@ -14,6 +14,7 @@ type Handler struct {
 	TorrentGrace     time.Duration
 	OnTorrentGrace   func(t *torrent.Torrent)
 	MetainfoCacheDir *string
+	OnNewTorrent     func(*torrent.Torrent)
 
 	mux         http.ServeMux
 	initMuxOnce sync.Once
