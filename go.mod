@@ -1,16 +1,26 @@
 module github.com/anacrolix/confluence
 
 require (
-	github.com/anacrolix/dht/v2 v2.5.2-0.20200326082041-8f69499a9cd0 // indirect
+	github.com/RoaringBitmap/roaring v0.4.23 // indirect
+	github.com/anacrolix/dht/v2 v2.6.0 // indirect
 	github.com/anacrolix/envpprof v1.1.0
 	github.com/anacrolix/go-libutp v1.0.2
 	github.com/anacrolix/missinggo v1.2.1
 	github.com/anacrolix/missinggo/v2 v2.4.1-0.20200227072623-f02f6484f997
+	github.com/anacrolix/multiless v0.0.0-20200413040533-acfd16f65d5d // indirect
 	github.com/anacrolix/tagflag v1.1.0
-	github.com/anacrolix/torrent v1.15.0
-	github.com/prometheus/client_golang v1.3.0
-	github.com/prometheus/common v0.9.1 // indirect
-	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
+	github.com/anacrolix/torrent v1.15.1
+	github.com/elliotchance/orderedmap v1.2.2 // indirect
+	github.com/golang/protobuf v1.4.0 // indirect
+	github.com/huandu/xstrings v1.3.1 // indirect
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
+	github.com/mschoch/smat v0.2.0 // indirect
+	github.com/prometheus/client_golang v1.5.1
+	github.com/prometheus/procfs v0.0.11 // indirect
+	github.com/tinylib/msgp v1.1.2 // indirect
+	golang.org/x/net v0.0.0-20200425230154-ff2c4b7c35a0
+	golang.org/x/sys v0.0.0-20200427175716-29b57079015a // indirect
+	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1 // indirect
 )
 
 go 1.13
