@@ -18,6 +18,7 @@ import (
 	"github.com/anacrolix/tagflag"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/iplist"
+	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
 )
 
@@ -33,12 +34,13 @@ var flags = struct {
 	UPnPPortForwarding bool          `help:"Port forward via UPnP"`
 	// You'd want this if access to the main HTTP service is trusted, such as used over localhost by
 	// other known services.
-	DebugOnMain     bool `help:"Expose default serve mux /debug/ endpoints over http"`
-	Dht             bool
-	DisableTrackers bool
-	TcpPeers        bool
-	UtpPeers        bool
-	ImpliedTracker  []string
+	DebugOnMain      bool `help:"Expose default serve mux /debug/ endpoints over http"`
+	Dht              bool
+	DisableTrackers  bool     `help:"Disables all trackers"`
+	TcpPeers         bool     `help:"Allow TCP peers"`
+	UtpPeers         bool     `help:"Allow uTP peers"`
+	ImplicitTracker  []string `help:"Trackers to be used for all torrents"`
+	OverrideTrackers bool     `help:"Only use implied trackers"`
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
@@ -157,8 +159,11 @@ func main() {
 			t.Drop()
 			onTorrentGraceExtra(ih)
 		},
-		OnNewTorrent: func(t *torrent.Torrent) {
-			t.AddTrackers([][]string{flags.ImpliedTracker})
+		OnNewTorrent: func(t *torrent.Torrent, mi *metainfo.MetaInfo) {
+			if !flags.OverrideTrackers {
+				t.AddTrackers(mi.UpvertedAnnounceList())
+			}
+			t.AddTrackers([][]string{flags.ImplicitTracker})
 		},
 	}
 	if flags.DebugOnMain {
