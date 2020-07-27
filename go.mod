@@ -2,6 +2,7 @@ module github.com/anacrolix/confluence
 
 require (
 	crawshaw.io/sqlite v0.3.2
+	github.com/anacrolix/dht/v2 v2.6.1 // indirect
 	github.com/anacrolix/envpprof v1.1.0
 	github.com/anacrolix/go-libutp v1.0.3
 	github.com/anacrolix/missinggo v1.2.1
