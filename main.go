@@ -47,6 +47,7 @@ var flags = struct {
 	ImplicitTracker  []string `help:"Trackers to be used for all torrents"`
 	OverrideTrackers bool     `help:"Only use implied trackers"`
 	SqliteStorage    *string
+	Pex              bool
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
@@ -54,6 +55,7 @@ var flags = struct {
 	Dht:           true,
 	TcpPeers:      true,
 	UtpPeers:      true,
+	Pex:           true,
 }
 
 func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (ret *torrent.Client, err error) {
@@ -86,6 +88,7 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 	cfg.DisableTrackers = flags.DisableTrackers
 	cfg.SetListenAddr(":50007")
 	cfg.Callbacks = callbacks
+	cfg.DisablePEX = !flags.Pex
 
 	http.HandleFunc("/debug/conntrack", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
