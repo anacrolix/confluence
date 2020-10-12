@@ -7,11 +7,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"crawshaw.io/sqlite"
-	"crawshaw.io/sqlite/sqlitex"
 	"github.com/anacrolix/confluence/confluence"
 	_ "github.com/anacrolix/envpprof"
 	utp "github.com/anacrolix/go-libutp"
@@ -22,7 +20,6 @@ import (
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/iplist"
 	"github.com/anacrolix/torrent/metainfo"
-	pp "github.com/anacrolix/torrent/peer_protocol"
 	"github.com/anacrolix/torrent/storage"
 	sqliteStorage "github.com/anacrolix/torrent/storage/sqlite"
 )
@@ -48,6 +45,9 @@ var flags = struct {
 	OverrideTrackers bool     `help:"Only use implied trackers"`
 	SqliteStorage    *string
 	Pex              bool
+
+	// Attaches the camouflage data collector callbacks.
+	CollectCamouflageData bool
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
@@ -168,18 +168,22 @@ func main() {
 }
 
 func mainErr() error {
-	sqliteConn, err := sqlite.OpenConn("file:confluence.db", 0)
-	if err != nil {
-		return fmt.Errorf("opening confluence sqlite db: %w", err)
+	torrentCallbacks := torrent.Callbacks{}
+	if flags.CollectCamouflageData {
+		sqliteConn, err := sqlite.OpenConn("file:confluence.db", 0)
+		if err != nil {
+			return fmt.Errorf("opening confluence sqlite db: %w", err)
+		}
+		defer sqliteConn.Close()
+		cc := camouflageCollector{
+			SqliteConn: sqliteConn,
+		}
+		cc.Init()
+		torrentCallbacks = cc.TorrentCallbacks()
 	}
-	defer sqliteConn.Close()
-	cc := camouflageCollector{
-		SqliteConn: sqliteConn,
-	}
-	cc.Init()
 	storage, onTorrentGraceExtra, closeStorage := getStorage()
 	defer closeStorage()
-	cl, err := newTorrentClient(storage, cc.TorrentCallbacks())
+	cl, err := newTorrentClient(storage, torrentCallbacks)
 	if err != nil {
 		return fmt.Errorf("creating torrent client: %w", err)
 	}
@@ -224,60 +228,4 @@ func mainErr() error {
 	}
 	registerNumTorrentsMetric(cl)
 	return http.Serve(l, h)
-}
-
-type camouflageCollector struct {
-	mu              sync.Mutex
-	SqliteConn      *sqlite.Conn
-	peerConnToRowId map[*torrent.PeerConn]int64
-}
-
-func (me *camouflageCollector) Init() {
-	me.peerConnToRowId = make(map[*torrent.PeerConn]int64)
-}
-
-func (me *camouflageCollector) TorrentCallbacks() torrent.Callbacks {
-	return torrent.Callbacks{
-		CompletedHandshake: func(peerConn *torrent.PeerConn, infoHash torrent.InfoHash) {
-			me.mu.Lock()
-			defer me.mu.Unlock()
-			err := sqlitex.Exec(
-				me.SqliteConn,
-				"insert into peers(infohash, extension_bytes, peer_id, remote_addr) values (?, ?, ?, ?)",
-				nil,
-				infoHash, peerConn.PeerExtensionBytes, fmt.Sprintf("%q", peerConn.PeerID[:]), peerConn.RemoteAddr.String())
-			if err != nil {
-				panic(err)
-			}
-			me.peerConnToRowId[peerConn] = me.SqliteConn.LastInsertRowID()
-		},
-		ReadMessage: func(conn *torrent.PeerConn, message *pp.Message) {
-			if message.Type != pp.Extended || message.ExtendedID != pp.HandshakeExtendedID {
-				return
-			}
-			me.mu.Lock()
-			defer me.mu.Unlock()
-			err := sqlitex.Exec(
-				me.SqliteConn,
-				"update peers set extended_handshake=? where rowid=?",
-				nil,
-				message.ExtendedPayload, me.peerConnToRowId[conn])
-			if err != nil {
-				panic(err)
-			}
-		},
-		ReadExtendedHandshake: func(conn *torrent.PeerConn, p *pp.ExtendedHandshakeMessage) {
-			me.mu.Lock()
-			defer me.mu.Unlock()
-			err := sqlitex.Exec(
-				me.SqliteConn,
-				"update peers set extended_v=? where rowid=?",
-				nil,
-				p.V, me.peerConnToRowId[conn])
-			if err != nil {
-				panic(err)
-			}
-		},
-	}
-
 }
