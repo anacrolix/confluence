@@ -15,3 +15,5 @@ require (
 )
 
 go 1.13
+
+replace crawshaw.io/sqlite => github.com/zombiezen/sqlite v0.3.3-0.20200630223153-bdd2fdca1601

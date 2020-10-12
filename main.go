@@ -24,6 +24,7 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	pp "github.com/anacrolix/torrent/peer_protocol"
 	"github.com/anacrolix/torrent/storage"
+	sqliteStorage "github.com/anacrolix/torrent/storage/sqlite"
 )
 
 var flags = struct {
@@ -45,6 +46,7 @@ var flags = struct {
 	UtpPeers         bool     `help:"Allow uTP peers"`
 	ImplicitTracker  []string `help:"Trackers to be used for all torrents"`
 	OverrideTrackers bool     `help:"Only use implied trackers"`
+	SqliteStorage    *string
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
@@ -96,7 +98,21 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 
 const storageRoot = "filecache"
 
-func getStorageProvider() resource.Provider {
+func getStorageProvider() (_ resource.Provider, close func() error) {
+	if path := flags.SqliteStorage; path != nil {
+		if *path == "" {
+			*path = "file:storage.db"
+		}
+		conn, err := sqlite.OpenConn(*path, 0)
+		if err != nil {
+			panic(err)
+		}
+		prov, err := sqliteStorage.NewProvider(conn)
+		if err != nil {
+			panic(err)
+		}
+		return prov, conn.Close
+	}
 	if flags.UnlimitedCache {
 		return resource.TranslatedProvider{
 			BaseProvider: resource.OSFileProvider{},
@@ -104,7 +120,7 @@ func getStorageProvider() resource.Provider {
 			JoinLocations: func(base, rel string) string {
 				return filepath.Join(base, rel)
 			},
-		}
+		}, func() error { return nil }
 	}
 	fc, err := filecache.NewCache(storageRoot)
 	x.Pie(err)
@@ -123,16 +139,19 @@ func getStorageProvider() resource.Provider {
 	})
 
 	fc.SetCapacity(flags.CacheCapacity.Int64())
-	return fc.AsResourceProvider()
+	return fc.AsResourceProvider(), func() error { return nil }
 }
 
-func getStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash)) {
+func getStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash), close func() error) {
 	if flags.FileDir != "" {
-		return storage.NewFileByInfoHash(flags.FileDir), func(ih torrent.InfoHash) {
-			os.RemoveAll(filepath.Join(flags.FileDir, ih.HexString()))
-		}
+		return storage.NewFileByInfoHash(flags.FileDir),
+			func(ih torrent.InfoHash) {
+				os.RemoveAll(filepath.Join(flags.FileDir, ih.HexString()))
+			},
+			func() error { return nil }
 	}
-	return storage.NewResourcePieces(getStorageProvider()), func(ih torrent.InfoHash) {}
+	prov, close := getStorageProvider()
+	return storage.NewResourcePieces(prov), func(ih torrent.InfoHash) {}, close
 }
 
 func main() {
@@ -155,7 +174,8 @@ func mainErr() error {
 		SqliteConn: sqliteConn,
 	}
 	cc.Init()
-	storage, onTorrentGraceExtra := getStorage()
+	storage, onTorrentGraceExtra, closeStorage := getStorage()
+	defer closeStorage()
 	cl, err := newTorrentClient(storage, cc.TorrentCallbacks())
 	if err != nil {
 		return fmt.Errorf("creating torrent client: %w", err)
