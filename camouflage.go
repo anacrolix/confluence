@@ -24,6 +24,11 @@ func (me *camouflageCollector) Init() {
 
 func (me *camouflageCollector) TorrentCallbacks() torrent.Callbacks {
 	return torrent.Callbacks{
+		PeerConnClosed: func(pc *torrent.PeerConn) {
+			me.mu.Lock()
+			defer me.mu.Unlock()
+			delete(me.peerConnToRowId, pc)
+		},
 		CompletedHandshake: func(peerConn *torrent.PeerConn, infoHash torrent.InfoHash) {
 			me.mu.Lock()
 			defer me.mu.Unlock()
