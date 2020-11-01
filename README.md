@@ -22,13 +22,25 @@ $ godo github.com/anacrolix/confluence -h
 Usage:
   confluence [OPTIONS...]
 Options:
-  -addr            (string)          HTTP listen address (Default: localhost:8080)
-  -cacheCapacity   (tagflag.Bytes)   Data cache capacity (Default: 11 GB)
-  -debugOnMain     (bool)            Expose default serve mux /debug/ endpoints over http
-  -dhtPublicIP     (net.IP)          DHT secure IP
-  -fileDir         (string)          File-based storage directory, overrides piece storage
-  -seed            (bool)            Seed data
-  -torrentGrace    (time.Duration)   How long to wait to drop a torrent after its last request (Default: 1m0s)
+  -addr                    (string)          HTTP listen address (Default: localhost:8080)
+  -cacheCapacity           (tagflag.Bytes)   Data cache capacity (Default: 11 GB)
+  -collectCamouflageData   (bool)
+  -debugOnMain             (bool)            Expose default serve mux /debug/ endpoints over http
+  -dht                     (bool)            Default: true
+  -disableTrackers         (bool)            Disables all trackers
+  -fileDir                 (string)          File-based storage directory, overrides piece storage
+  -implicitTracker         ([]string)        Trackers to be used for all torrents
+  -overrideTrackers        (bool)            Only use implied trackers
+  -pex                     (bool)            Default: true
+  -publicIp4               (net.IP)          Public IPv4 address
+  -publicIp6               (net.IP)          Public IPv6 address
+  -seed                    (bool)            Seed data
+  -sqliteStorage           (*string)
+  -tcpPeers                (bool)            Allow TCP peers (Default: true)
+  -torrentGrace            (time.Duration)   How long to wait to drop a torrent after its last request (Default: 1m0s)
+  -uPnPPortForwarding      (bool)            Port forward via UPnP
+  -unlimitedCache          (bool)            Don't limit cache capacity
+  -utpPeers                (bool)            Allow uTP peers (Default: true)
 ```
 
 Confluence will announce itself to DHT, and wait for HTTP activity. Torrents are added to the client as needed. Without an active request on a torrent, it is kicked from the client after the torrent grace period. Its data however may remain in the cache for future uses of that torrent.
