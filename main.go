@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -43,8 +44,11 @@ var flags = struct {
 	UtpPeers         bool     `help:"Allow uTP peers"`
 	ImplicitTracker  []string `help:"Trackers to be used for all torrents"`
 	OverrideTrackers bool     `help:"Only use implied trackers"`
-	SqliteStorage    *string
 	Pex              bool
+
+	SqliteStorage           *string
+	SqliteStoragePoolSize   int
+	InitSqliteStorageSchema bool
 
 	// Attaches the camouflage data collector callbacks.
 	CollectCamouflageData bool
@@ -56,6 +60,8 @@ var flags = struct {
 	TcpPeers:      true,
 	UtpPeers:      true,
 	Pex:           true,
+
+	InitSqliteStorageSchema: true,
 }
 
 func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (ret *torrent.Client, err error) {
@@ -104,17 +110,34 @@ const storageRoot = "filecache"
 func getStorageProvider() (_ resource.Provider, close func() error) {
 	if path := flags.SqliteStorage; path != nil {
 		if *path == "" {
-			*path = "file:storage.db"
+			*path = "storage.db"
 		}
-		conn, err := sqlite.OpenConn(*path, 0)
+		cap := flags.CacheCapacity.Int64()
+		if flags.UnlimitedCache {
+			cap = 0
+		}
+		conns, provOpts, err := sqliteStorage.NewPool(sqliteStorage.NewPoolOpts{
+			Path:           *path,
+			NumConns:       flags.SqliteStoragePoolSize,
+			DontInitSchema: !flags.InitSqliteStorageSchema,
+			Capacity:       cap,
+		})
 		if err != nil {
 			panic(err)
 		}
-		prov, err := sqliteStorage.NewProvider(conn)
+		if flags.UnlimitedCache {
+			conn := conns.Get(context.TODO())
+			defer conns.Put(conn)
+			err = sqliteStorage.UnlimitCapacity(conn)
+			if err != nil {
+				panic(err)
+			}
+		}
+		prov, err := sqliteStorage.NewProvider(conns, provOpts)
 		if err != nil {
 			panic(err)
 		}
-		return prov, conn.Close
+		return prov, prov.Close
 	}
 	if flags.UnlimitedCache {
 		return resource.TranslatedProvider{
