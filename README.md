@@ -59,3 +59,9 @@ There are several routes to interact with torrents:
 -	`GET /metainfo?ih=<infohash in hex>`. returns a .torrent file containing the hash info.
 
 Wherever a `?ih=<infohash>` query parameter is expected, it can also be substituted by a `?magnet=<magnet URI>` parameter instead.
+
+## Example
+Running the following command from a shell will launch VLC and start playing the Sintel movie stream from its public torrent.
+```
+vlc 'http://localhost:8080/data?magnet=magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&path=Sintel.mp4'
+```
