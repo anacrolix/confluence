@@ -46,7 +46,7 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request))
 			q := r.URL.Query()
 			ms := q.Get("magnet")
 			if ms != "" {
-				m, err := metainfo.ParseMagnetURI(ms)
+				m, err := metainfo.ParseMagnetUri(ms)
 				if err != nil {
 					return metainfo.Hash{}, fmt.Errorf("parsing magnet: %w", err), nil
 				}
