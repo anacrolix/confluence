@@ -234,7 +234,7 @@ func mainErr() error {
 			onTorrentGraceExtra(ih)
 		},
 		OnNewTorrent: func(t *torrent.Torrent, mi *metainfo.MetaInfo) {
-			if !flags.OverrideTrackers {
+			if !flags.OverrideTrackers && mi != nil {
 				t.AddTrackers(mi.UpvertedAnnounceList())
 			}
 			t.AddTrackers([][]string{flags.ImplicitTracker})
