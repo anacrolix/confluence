@@ -7,7 +7,7 @@ require (
 	github.com/anacrolix/missinggo v1.2.1
 	github.com/anacrolix/missinggo/v2 v2.5.0
 	github.com/anacrolix/tagflag v1.1.1-0.20200411025953-9bb5209d56c2
-	github.com/anacrolix/torrent v1.18.1-0.20201116013946-2ad518563682
+	github.com/anacrolix/torrent v1.18.1-0.20201210001345-de964db3c2eb
 	github.com/prometheus/client_golang v1.5.1
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	golang.org/x/net v0.0.0-20201209123823-ac852fbbde11
