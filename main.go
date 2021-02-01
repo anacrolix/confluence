@@ -19,6 +19,7 @@ import (
 	"github.com/anacrolix/missinggo/x"
 	"github.com/anacrolix/tagflag"
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/analysis"
 	"github.com/anacrolix/torrent/iplist"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
@@ -52,6 +53,8 @@ var flags = struct {
 
 	// Attaches the camouflage data collector callbacks.
 	CollectCamouflageData bool
+
+	AnalyzePeerUploadOrder bool `help:"Installs the peer upload order analysis"`
 }{
 	Addr:          "localhost:8080",
 	CacheCapacity: 10 << 30,
@@ -101,6 +104,11 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 		cfg.ConnTracker.PrintStatus(w)
 	})
 
+	if flags.AnalyzePeerUploadOrder {
+		var pieceOrdering analysis.PeerUploadOrder
+		pieceOrdering.Init()
+		pieceOrdering.Install(&cfg.Callbacks)
+	}
 	// cfg.DisableAcceptRateLimiting = true
 	return torrent.NewClient(cfg)
 }
