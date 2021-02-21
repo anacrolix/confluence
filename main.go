@@ -12,6 +12,9 @@ import (
 
 	"crawshaw.io/sqlite"
 	"github.com/anacrolix/confluence/confluence"
+	debug_writer "github.com/anacrolix/confluence/debug-writer"
+	"github.com/anacrolix/dht/v2"
+	peer_store "github.com/anacrolix/dht/v2/peer-store"
 	_ "github.com/anacrolix/envpprof"
 	utp "github.com/anacrolix/go-libutp"
 	"github.com/anacrolix/missinggo/v2/filecache"
@@ -110,6 +113,13 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 		pieceOrdering.Install(&cfg.Callbacks)
 	}
 	// cfg.DisableAcceptRateLimiting = true
+
+	cfg.ConfigureAnacrolixDhtServer = func(cfg *dht.ServerConfig) {
+		if cfg.PeerStore == nil {
+			cfg.PeerStore = &peer_store.InMemory{}
+		}
+	}
+
 	return torrent.NewClient(cfg)
 }
 
@@ -222,6 +232,22 @@ func mainErr() error {
 	http.HandleFunc("/debug/dht", func(w http.ResponseWriter, r *http.Request) {
 		for _, ds := range cl.DhtServers() {
 			ds.WriteStatus(w)
+		}
+	})
+	http.HandleFunc("/debug/dhtPeerStores", func(w http.ResponseWriter, r *http.Request) {
+		for _, ds := range cl.DhtServers() {
+			fmt.Fprintf(w, "%v:\n\n", ds)
+			func() {
+				defer func() {
+					r := recover()
+					if r == nil {
+						return
+					}
+					fmt.Fprintf(w, "panic: %v\n", r)
+				}()
+				ds.(torrent.PeerStorer).PeerStore().(debug_writer.Interface).WriteDebug(w)
+			}()
+			fmt.Fprintln(w)
 		}
 	})
 	http.HandleFunc("/debug/utp", func(w http.ResponseWriter, r *http.Request) {
