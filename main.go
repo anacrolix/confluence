@@ -14,6 +14,7 @@ import (
 	"github.com/anacrolix/confluence/confluence"
 	debug_writer "github.com/anacrolix/confluence/debug-writer"
 	"github.com/anacrolix/dht/v2"
+	"github.com/anacrolix/dht/v2/int160"
 	peer_store "github.com/anacrolix/dht/v2/peer-store"
 	_ "github.com/anacrolix/envpprof"
 	utp "github.com/anacrolix/go-libutp"
@@ -115,8 +116,11 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 	// cfg.DisableAcceptRateLimiting = true
 
 	cfg.ConfigureAnacrolixDhtServer = func(cfg *dht.ServerConfig) {
+		cfg.InitNodeId()
 		if cfg.PeerStore == nil {
-			cfg.PeerStore = &peer_store.InMemory{}
+			cfg.PeerStore = &peer_store.InMemory{
+				RootId: int160.FromByteArray(cfg.NodeId),
+			}
 		}
 	}
 
