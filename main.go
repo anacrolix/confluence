@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
@@ -129,38 +128,29 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 
 const storageRoot = "filecache"
 
-func getStorageProvider() (_ resource.Provider, close func() error) {
-	if path := flags.SqliteStorage; path != nil {
-		if *path == "" {
-			*path = "storage.db"
-		}
-		cap := flags.CacheCapacity.Int64()
-		if flags.UnlimitedCache {
-			cap = 0
-		}
-		conns, provOpts, err := sqliteStorage.NewPool(sqliteStorage.NewPoolOpts{
-			Path:           *path,
+func newSqliteResourcePiecesStorageClient(path string) storage.ClientImplCloser {
+	if path == "" {
+		path = "storage.db"
+	}
+	cap := flags.CacheCapacity.Int64()
+	if flags.UnlimitedCache {
+		cap = 0
+	}
+	ret, err := sqliteStorage.NewPiecesStorage(sqliteStorage.NewPiecesStorageOpts{
+		NewPoolOpts: sqliteStorage.NewPoolOpts{
+			Path:           path,
 			NumConns:       flags.SqliteStoragePoolSize,
 			DontInitSchema: !flags.InitSqliteStorageSchema,
 			Capacity:       cap,
-		})
-		if err != nil {
-			panic(err)
-		}
-		if flags.UnlimitedCache {
-			conn := conns.Get(context.TODO())
-			defer conns.Put(conn)
-			err = sqliteStorage.UnlimitCapacity(conn)
-			if err != nil {
-				panic(err)
-			}
-		}
-		prov, err := sqliteStorage.NewProvider(conns, provOpts)
-		if err != nil {
-			panic(err)
-		}
-		return prov, prov.Close
+		},
+	})
+	if err != nil {
+		panic(err)
 	}
+	return ret
+}
+
+func getStorageResourceProvider() (_ resource.Provider, close func() error) {
 	if flags.UnlimitedCache {
 		return resource.TranslatedProvider{
 			BaseProvider: resource.OSFileProvider{},
@@ -190,7 +180,7 @@ func getStorageProvider() (_ resource.Provider, close func() error) {
 	return fc.AsResourceProvider(), func() error { return nil }
 }
 
-func getStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash), close func() error) {
+func newClientStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash), close func() error) {
 	if flags.FileDir != "" {
 		return storage.NewFileByInfoHash(flags.FileDir),
 			func(ih torrent.InfoHash) {
@@ -198,8 +188,12 @@ func getStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash), 
 			},
 			func() error { return nil }
 	}
-	prov, close := getStorageProvider()
-	return storage.NewResourcePieces(prov), func(ih torrent.InfoHash) {}, close
+	if path := flags.SqliteStorage; path != nil {
+		sci := newSqliteResourcePiecesStorageClient(*path)
+		return sci, func(torrent.InfoHash) {}, sci.Close
+	}
+	prov, close := getStorageResourceProvider()
+	return storage.NewResourcePieces(prov), func(torrent.InfoHash) {}, close
 }
 
 func main() {
@@ -226,7 +220,7 @@ func mainErr() error {
 		cc.Init()
 		torrentCallbacks = cc.TorrentCallbacks()
 	}
-	storage, onTorrentGraceExtra, closeStorage := getStorage()
+	storage, onTorrentGraceExtra, closeStorage := newClientStorage()
 	defer closeStorage()
 	cl, err := newTorrentClient(storage, torrentCallbacks)
 	if err != nil {
