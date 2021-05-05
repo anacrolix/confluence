@@ -52,6 +52,7 @@ var flags = struct {
 
 	SqliteStorage           *string
 	SqliteStoragePoolSize   int
+	SqliteDirect            bool
 	InitSqliteStorageSchema bool
 
 	// Attaches the camouflage data collector callbacks.
@@ -68,6 +69,7 @@ var flags = struct {
 	Pex:           true,
 
 	InitSqliteStorageSchema: true,
+	SqliteDirect:            true,
 }
 
 func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (ret *torrent.Client, err error) {
@@ -127,6 +129,28 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 }
 
 const storageRoot = "filecache"
+
+func newSqliteDirectStorageClient(path string) storage.ClientImplCloser {
+	if path == "" {
+		path = "storage.db"
+	}
+	cap := flags.CacheCapacity.Int64()
+	if flags.UnlimitedCache {
+		cap = 0
+	}
+	ret, err := sqliteStorage.NewDirectStorage(sqliteStorage.NewDirectStorageOpts{
+		NewPoolOpts: sqliteStorage.NewPoolOpts{
+			Path:           path,
+			NumConns:       flags.SqliteStoragePoolSize,
+			DontInitSchema: !flags.InitSqliteStorageSchema,
+			Capacity:       cap,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
 
 func newSqliteResourcePiecesStorageClient(path string) storage.ClientImplCloser {
 	if path == "" {
@@ -189,7 +213,13 @@ func newClientStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoH
 			func() error { return nil }
 	}
 	if path := flags.SqliteStorage; path != nil {
-		sci := newSqliteResourcePiecesStorageClient(*path)
+		sci := func() storage.ClientImplCloser {
+			if flags.SqliteDirect {
+				return newSqliteDirectStorageClient(*path)
+			} else {
+				return newSqliteResourcePiecesStorageClient(*path)
+			}
+		}()
 		return sci, func(torrent.InfoHash) {}, sci.Close
 	}
 	prov, close := getStorageResourceProvider()
