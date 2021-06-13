@@ -54,6 +54,7 @@ var flags = struct {
 	SqliteStoragePoolSize   int
 	SqliteDirect            bool
 	InitSqliteStorageSchema bool
+	SqliteJournalMode       string
 
 	// Attaches the camouflage data collector callbacks.
 	CollectCamouflageData bool
@@ -138,14 +139,12 @@ func newSqliteDirectStorageClient(path string) storage.ClientImplCloser {
 	if flags.UnlimitedCache {
 		cap = 0
 	}
-	ret, err := sqliteStorage.NewDirectStorage(sqliteStorage.NewDirectStorageOpts{
-		NewPoolOpts: sqliteStorage.NewPoolOpts{
-			Path:           path,
-			NumConns:       flags.SqliteStoragePoolSize,
-			DontInitSchema: !flags.InitSqliteStorageSchema,
-			Capacity:       cap,
-		},
-	})
+	var opts sqliteStorage.NewDirectStorageOpts
+	opts.Path = path
+	opts.DontInitSchema = !flags.InitSqliteStorageSchema
+	opts.Capacity = cap
+	opts.SetJournalMode = flags.SqliteJournalMode
+	ret, err := sqliteStorage.NewDirectStorage(opts)
 	if err != nil {
 		panic(err)
 	}
@@ -160,14 +159,12 @@ func newSqliteResourcePiecesStorageClient(path string) storage.ClientImplCloser 
 	if flags.UnlimitedCache {
 		cap = 0
 	}
-	ret, err := sqliteStorage.NewPiecesStorage(sqliteStorage.NewPiecesStorageOpts{
-		NewPoolOpts: sqliteStorage.NewPoolOpts{
-			Path:           path,
-			NumConns:       flags.SqliteStoragePoolSize,
-			DontInitSchema: !flags.InitSqliteStorageSchema,
-			Capacity:       cap,
-		},
-	})
+	var opts sqliteStorage.NewPiecesStorageOpts
+	opts.Path = path
+	opts.NumConns = flags.SqliteStoragePoolSize
+	opts.DontInitSchema = !flags.InitSqliteStorageSchema
+	opts.Capacity = cap
+	ret, err := sqliteStorage.NewPiecesStorage(opts)
 	if err != nil {
 		panic(err)
 	}
