@@ -51,8 +51,6 @@ var flags = struct {
 	Pex              bool
 
 	SqliteStorage           *string
-	SqliteStoragePoolSize   int
-	SqliteDirect            bool
 	InitSqliteStorageSchema bool
 	SqliteJournalMode       string
 
@@ -70,7 +68,6 @@ var flags = struct {
 	Pex:           true,
 
 	InitSqliteStorageSchema: true,
-	SqliteDirect:            true,
 }
 
 func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (ret *torrent.Client, err error) {
@@ -104,11 +101,6 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 	cfg.SetListenAddr(":50007")
 	cfg.Callbacks = callbacks
 	cfg.DisablePEX = !flags.Pex
-
-	http.HandleFunc("/debug/conntrack", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		cfg.ConnTracker.PrintStatus(w)
-	})
 
 	if flags.AnalyzePeerUploadOrder {
 		var pieceOrdering analysis.PeerUploadOrder
@@ -145,26 +137,6 @@ func newSqliteDirectStorageClient(path string) storage.ClientImplCloser {
 	opts.Capacity = cap
 	opts.SetJournalMode = flags.SqliteJournalMode
 	ret, err := sqliteStorage.NewDirectStorage(opts)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func newSqliteResourcePiecesStorageClient(path string) storage.ClientImplCloser {
-	if path == "" {
-		path = "storage.db"
-	}
-	cap := flags.CacheCapacity.Int64()
-	if flags.UnlimitedCache {
-		cap = 0
-	}
-	var opts sqliteStorage.NewPiecesStorageOpts
-	opts.Path = path
-	opts.NumConns = flags.SqliteStoragePoolSize
-	opts.DontInitSchema = !flags.InitSqliteStorageSchema
-	opts.Capacity = cap
-	ret, err := sqliteStorage.NewPiecesStorage(opts)
 	if err != nil {
 		panic(err)
 	}
@@ -210,13 +182,7 @@ func newClientStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoH
 			func() error { return nil }
 	}
 	if path := flags.SqliteStorage; path != nil {
-		sci := func() storage.ClientImplCloser {
-			if flags.SqliteDirect {
-				return newSqliteDirectStorageClient(*path)
-			} else {
-				return newSqliteResourcePiecesStorageClient(*path)
-			}
-		}()
+		sci := newSqliteDirectStorageClient(*path)
 		return sci, func(torrent.InfoHash) {}, sci.Close
 	}
 	prov, close := getStorageResourceProvider()
