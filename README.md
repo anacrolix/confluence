@@ -6,6 +6,12 @@ Confluence is a torrent client as a HTTP service. This allows for easy use from 
 Installation
 ============
 
+## Binary
+```
+go install github.com/anacrolix/confluence@latest
+```
+
+## Module
 ```
 go get github.com/anacrolix/confluence
 ```
