@@ -1,13 +1,18 @@
 package confluence
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
+	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -70,7 +75,10 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request))
 		t, new, release := me.GetTorrent(ih)
 		defer release()
 		if new {
-			mi := me.cachedMetaInfo(ih)
+			mi, err := me.cachedMetaInfo(ih)
+			if err != nil {
+				log.Printf("error getting cached metainfo for %q: %v", ih, err)
+			}
 			if mi != nil {
 				t.SetInfoBytes(mi.InfoBytes)
 			}
@@ -101,14 +109,33 @@ func (h *Handler) saveTorrentWhenGotInfo(t *torrent.Torrent) {
 	}
 }
 
-func (h *Handler) cachedMetaInfo(infoHash metainfo.Hash) *metainfo.MetaInfo {
-	p := filepath.Join(h.metainfoCacheDir(), infoHash.HexString()+".torrent")
-	mi, err := metainfo.LoadFromFile(p)
-	if os.IsNotExist(err) {
-		return nil
+func (h *Handler) cachedMetaInfo(infoHash metainfo.Hash) (*metainfo.MetaInfo, error) {
+	p := path.Join(h.metainfoCacheDir(), infoHash.HexString()+".torrent")
+	var miR io.Reader
+	var err error
+	if h.MetainfoStorage != nil {
+		var b squirrel.PinnedBlob
+		b, err = h.MetainfoStorage.Open(p)
+		if err != nil {
+			err = fmt.Errorf("opening metainfo storage: %w", err)
+		}
+		miR = io.NewSectionReader(b, 0, b.Length())
+	} else {
+		f, err := os.Open(filepath.FromSlash(p))
+		if err == nil {
+			defer f.Close()
+		}
+		miR = f
+	}
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
 	}
 	if err != nil {
-		log.Printf("error loading metainfo file %q: %s", p, err)
+		return nil, err
 	}
-	return mi
+	mi, err := metainfo.Load(miR)
+	if err != nil {
+		err = fmt.Errorf("loading metainfo: %w", err)
+	}
+	return mi, err
 }

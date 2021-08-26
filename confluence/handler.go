@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/anacrolix/missinggo/refclose"
+	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -15,6 +16,7 @@ type Handler struct {
 	TorrentGrace     time.Duration
 	OnTorrentGrace   func(t *torrent.Torrent)
 	MetainfoCacheDir *string
+	MetainfoStorage  *squirrel.Cache
 	// Called as soon as a new torrent is added, with the cached metainfo if it's found.
 	OnNewTorrent func(newTorrent *torrent.Torrent, cachedMetainfo *metainfo.MetaInfo)
 

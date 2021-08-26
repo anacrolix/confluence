@@ -20,6 +20,7 @@ import (
 	"github.com/anacrolix/missinggo/v2/filecache"
 	"github.com/anacrolix/missinggo/v2/resource"
 	"github.com/anacrolix/missinggo/x"
+	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/tagflag"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/analysis"
@@ -123,7 +124,7 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 
 const storageRoot = "filecache"
 
-func newSqliteDirectStorageClient(path string) storage.ClientImplCloser {
+func newSquirrelCache(path string) *squirrel.Cache {
 	if path == "" {
 		path = "storage.db"
 	}
@@ -131,12 +132,12 @@ func newSqliteDirectStorageClient(path string) storage.ClientImplCloser {
 	if flags.UnlimitedCache {
 		cap = 0
 	}
-	var opts sqliteStorage.NewDirectStorageOpts
+	var opts squirrel.NewCacheOpts
 	opts.Path = path
 	opts.DontInitSchema = !flags.InitSqliteStorageSchema
 	opts.Capacity = cap
 	opts.SetJournalMode = flags.SqliteJournalMode
-	ret, err := sqliteStorage.NewDirectStorage(opts)
+	ret, err := squirrel.NewCache(opts)
 	if err != nil {
 		panic(err)
 	}
@@ -173,7 +174,7 @@ func getStorageResourceProvider() (_ resource.Provider, close func() error) {
 	return fc.AsResourceProvider(), func() error { return nil }
 }
 
-func newClientStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash), close func() error) {
+func newClientStorage(squirrelCache *squirrel.Cache) (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash), close func() error) {
 	if flags.FileDir != "" {
 		return storage.NewFileByInfoHash(flags.FileDir),
 			func(ih torrent.InfoHash) {
@@ -182,8 +183,8 @@ func newClientStorage() (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoH
 			func() error { return nil }
 	}
 	if path := flags.SqliteStorage; path != nil {
-		sci := newSqliteDirectStorageClient(*path)
-		return sci, func(torrent.InfoHash) {}, sci.Close
+		sci := sqliteStorage.NewWrappingClient(squirrelCache)
+		return sci, func(torrent.InfoHash) {}, func() error { return nil }
 	}
 	prov, close := getStorageResourceProvider()
 	return storage.NewResourcePieces(prov), func(torrent.InfoHash) {}, close
@@ -213,7 +214,12 @@ func mainErr() error {
 		cc.Init()
 		torrentCallbacks = cc.TorrentCallbacks()
 	}
-	storage, onTorrentGraceExtra, closeStorage := newClientStorage()
+	var squirrelCache *squirrel.Cache
+	if s := flags.SqliteStorage; s != nil {
+		squirrelCache = newSquirrelCache(*s)
+		defer squirrelCache.Close()
+	}
+	storage, onTorrentGraceExtra, closeStorage := newClientStorage(squirrelCache)
 	defer closeStorage()
 	cl, err := newTorrentClient(storage, torrentCallbacks)
 	if err != nil {
@@ -264,6 +270,7 @@ func mainErr() error {
 			}
 			t.AddTrackers([][]string{flags.ImplicitTracker})
 		},
+		MetainfoStorage: squirrelCache,
 	}
 	if flags.DebugOnMain {
 		h = func() http.Handler {

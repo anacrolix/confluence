@@ -1,9 +1,11 @@
 package confluence
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -23,14 +25,22 @@ func torrentFileByPath(t *torrent.Torrent, path_ string) *torrent.File {
 }
 
 func (h *Handler) saveTorrentFile(t *torrent.Torrent) error {
-	p := filepath.Join(h.metainfoCacheDir(), t.InfoHash().HexString()+".torrent")
+	var miBuf bytes.Buffer
+	err := t.Metainfo().Write(&miBuf)
+	if err != nil {
+		return err
+	}
+	p := path.Join(h.metainfoCacheDir(), t.InfoHash().HexString()+".torrent")
+	if h.MetainfoStorage != nil {
+		return h.MetainfoStorage.Put(p, miBuf.Bytes())
+	}
 	os.MkdirAll(filepath.Dir(p), 0750)
-	f, err := os.OpenFile(p, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	f, err := os.OpenFile(filepath.FromSlash(p), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	err = t.Metainfo().Write(f)
+	_, err = f.Write(miBuf.Bytes())
 	if err != nil {
 		return err
 	}
