@@ -21,7 +21,7 @@ require (
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/mmsg v1.0.0 // indirect
 	github.com/anacrolix/multiless v0.1.1-0.20210529082330-de2f6cf29619 // indirect
-	github.com/anacrolix/stm v0.3.0-alpha // indirect
+	github.com/anacrolix/stm v0.3.0 // indirect
 	github.com/anacrolix/sync v0.4.0 // indirect
 	github.com/anacrolix/upnp v0.1.2-0.20200416075019-5e9378ed1425 // indirect
 	github.com/anacrolix/utp v0.1.0 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/pion/mdns v0.0.5 // indirect
 	github.com/pion/randutil v0.1.0 // indirect
 	github.com/pion/rtcp v1.2.6 // indirect
-	github.com/pion/rtp v1.7.1 // indirect
+	github.com/pion/rtp v1.7.2 // indirect
 	github.com/pion/sctp v1.7.12 // indirect
 	github.com/pion/sdp/v3 v3.0.4 // indirect
 	github.com/pion/srtp/v2 v2.0.5 // indirect

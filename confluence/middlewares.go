@@ -111,28 +111,24 @@ func (h *Handler) saveTorrentWhenGotInfo(t *torrent.Torrent) {
 
 func (h *Handler) cachedMetaInfo(infoHash metainfo.Hash) (*metainfo.MetaInfo, error) {
 	p := path.Join(h.metainfoCacheDir(), infoHash.HexString()+".torrent")
-	var miR io.Reader
-	var err error
-	if h.MetainfoStorage != nil {
-		var b squirrel.PinnedBlob
-		b, err = h.MetainfoStorage.Open(p)
-		if err != nil {
-			err = fmt.Errorf("opening metainfo storage: %w", err)
+	miR, err := func() (io.ReadCloser, error) {
+		if h.MetainfoStorage != nil {
+			var b squirrel.PinnedBlob
+			b, err := h.MetainfoStorage.Open(p)
+			if err != nil {
+				return nil, fmt.Errorf("opening from metainfo storage: %w", err)
+			}
+			return io.NopCloser(io.NewSectionReader(b, 0, b.Length())), nil
 		}
-		miR = io.NewSectionReader(b, 0, b.Length())
-	} else {
-		f, err := os.Open(filepath.FromSlash(p))
-		if err == nil {
-			defer f.Close()
-		}
-		miR = f
-	}
+		return os.Open(filepath.FromSlash(p))
+	}()
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
+	defer miR.Close()
 	mi, err := metainfo.Load(miR)
 	if err != nil {
 		err = fmt.Errorf("loading metainfo: %w", err)
