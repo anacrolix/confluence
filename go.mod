@@ -9,7 +9,7 @@ require (
 	github.com/anacrolix/missinggo/v2 v2.5.2
 	github.com/anacrolix/squirrel v0.1.0
 	github.com/anacrolix/tagflag v1.3.0
-	github.com/anacrolix/torrent v1.30.2
+	github.com/anacrolix/torrent v1.31.1-0.20210902041929-d4c3a690ab9d
 	github.com/prometheus/client_golang v1.11.0
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
 )
