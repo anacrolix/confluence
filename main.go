@@ -28,6 +28,7 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
 	sqliteStorage "github.com/anacrolix/torrent/storage/sqlite"
+	"github.com/arl/statsviz"
 )
 
 var flags = struct {
@@ -191,6 +192,7 @@ func newClientStorage(squirrelCache *squirrel.Cache) (_ storage.ClientImpl, onTo
 }
 
 func main() {
+	statsviz.RegisterDefault()
 	log.SetFlags(log.Flags() | log.Lshortfile)
 	tagflag.Parse(&flags)
 	err := mainErr()

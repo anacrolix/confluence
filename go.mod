@@ -25,6 +25,7 @@ require (
 	github.com/anacrolix/sync v0.4.0 // indirect
 	github.com/anacrolix/upnp v0.1.2-0.20200416075019-5e9378ed1425 // indirect
 	github.com/anacrolix/utp v0.1.0 // indirect
+	github.com/arl/statsviz v0.4.0 // indirect
 	github.com/benbjohnson/immutable v0.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect
