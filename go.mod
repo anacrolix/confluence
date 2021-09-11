@@ -2,21 +2,22 @@ module github.com/anacrolix/confluence
 
 require (
 	crawshaw.io/sqlite v0.3.3-0.20210127221821-98b1f83c5508
-	github.com/anacrolix/dht/v2 v2.10.3
+	github.com/anacrolix/dht/v2 v2.10.5-0.20210902001729-06cc4fe90e53
 	github.com/anacrolix/envpprof v1.1.1
 	github.com/anacrolix/go-libutp v1.0.4
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/v2 v2.5.2
 	github.com/anacrolix/squirrel v0.1.0
 	github.com/anacrolix/tagflag v1.3.0
-	github.com/anacrolix/torrent v1.31.1-0.20210902041929-d4c3a690ab9d
+	github.com/anacrolix/torrent v1.31.1-0.20210910222643-d957502528e0
+	github.com/arl/statsviz v0.4.0
 	github.com/prometheus/client_golang v1.11.0
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
 )
 
 require (
 	github.com/RoaringBitmap/roaring v0.9.4 // indirect
-	github.com/anacrolix/chansync v0.1.0 // indirect
+	github.com/anacrolix/chansync v0.2.1-0.20210910114620-14955c95ded9 // indirect
 	github.com/anacrolix/log v0.9.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/mmsg v1.0.0 // indirect
@@ -25,7 +26,6 @@ require (
 	github.com/anacrolix/sync v0.4.0 // indirect
 	github.com/anacrolix/upnp v0.1.2-0.20200416075019-5e9378ed1425 // indirect
 	github.com/anacrolix/utp v0.1.0 // indirect
-	github.com/arl/statsviz v0.4.0 // indirect
 	github.com/benbjohnson/immutable v0.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect

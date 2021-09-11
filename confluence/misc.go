@@ -58,7 +58,6 @@ func ServeTorrent(w http.ResponseWriter, r *http.Request, t *torrent.Torrent) {
 
 func ServeTorrentReader(w http.ResponseWriter, r *http.Request, tr torrent.Reader, name string) {
 	defer tr.Close()
-	tr.SetReadahead(48 << 20)
 	rs := struct {
 		io.Reader
 		io.Seeker
