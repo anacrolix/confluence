@@ -56,7 +56,7 @@ Routes
 
 There are several routes to interact with torrents:
 
--	`GET /data?ih=<infohash in hex>&path=<display path of file declared in torrent info>`. Note that this handler supports HTTP range requests for bytes. Response will block until the data is available.
+-	`GET /data?ih=<infohash in hex>&path=<display path of file declared in torrent info>&filename=<file name of the data, optional>`. Note that this handler supports HTTP range requests for bytes. Response will block until the data is available.
 -	`GET /status`. This fetches the textual status info page per anacrolix/torrent.Client.WriteStatus. Very useful for debugging.
 -	`GET /info?ih=<infohash in hex>`. This returns the info bytes for the matching torrent. It's useful if the caller needs to know about the torrent, such as what files it contains. It will block until the info is available. The response is the full bencoded info dictionary per [BEP 3](http://www.bittorrent.org/beps/bep_0003.html).
 -	`/events?ih=<infohash in hex>`. This is a websocket that emits frames with [confluence.Event] encoded as JSON for the torrent. The PieceChanged field for instance is set if the given piece changed [state](https://godoc.org/github.com/anacrolix/torrent#PieceState) within the torrent.

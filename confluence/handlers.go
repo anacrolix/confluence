@@ -16,6 +16,12 @@ import (
 func dataHandler(w http.ResponseWriter, r *request) {
 	q := r.URL.Query()
 	t := r.torrent
+	if q.Has("filename") {
+		w.Header().Set(
+			"Content-Disposition",
+			fmt.Sprintf(`attachment; filename="%s"`, q.Get("filename")),
+		)
+	}
 	if len(q["path"]) == 0 {
 		ServeTorrent(w, r.Request, t)
 	} else {
