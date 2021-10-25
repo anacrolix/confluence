@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path"
 	"strconv"
 
 	"github.com/anacrolix/torrent"
@@ -19,12 +20,18 @@ func dataHandler(w http.ResponseWriter, r *request) {
 	if q.Has("filename") {
 		w.Header().Set(
 			"Content-Disposition",
-			fmt.Sprintf(`attachment; filename="%s"`, q.Get("filename")),
+			fmt.Sprintf(`inline; filename="%s"`, q.Get("filename")),
 		)
 	}
 	if len(q["path"]) == 0 {
 		ServeTorrent(w, r.Request, t)
 	} else {
+		if !q.Has("filename") {
+			w.Header().Set(
+				"Content-Disposition",
+				fmt.Sprintf(`inline; filename="%s"`, path.Base(q.Get("path"))),
+			)
+		}
 		ServeFile(w, r.Request, t, q.Get("path"))
 	}
 }
