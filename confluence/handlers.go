@@ -19,8 +19,7 @@ func dataHandler(w http.ResponseWriter, r *request) {
 	t := r.torrent
 	if q.Has("filename") {
 		w.Header().Set(
-			"Content-Disposition",
-			fmt.Sprintf(`inline; filename="%s"`, q.Get("filename")),
+			"Content-Disposition", "filename=" + strconv.Quote(q.Get("filename")),
 		)
 	}
 	if len(q["path"]) == 0 {
@@ -28,8 +27,7 @@ func dataHandler(w http.ResponseWriter, r *request) {
 	} else {
 		if !q.Has("filename") {
 			w.Header().Set(
-				"Content-Disposition",
-				fmt.Sprintf(`inline; filename="%s"`, path.Base(q.Get("path"))),
+				"Content-Disposition", "filename=" + strconv.Quote(path.Base(q.Get("path"))),
 			)
 		}
 		ServeFile(w, r.Request, t, q.Get("path"))
