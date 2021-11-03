@@ -100,7 +100,9 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 	cfg.NoDefaultPortForwarding = !flags.UPnPPortForwarding
 	cfg.NoDHT = !flags.Dht
 	cfg.DisableTrackers = flags.DisableTrackers
-	cfg.SetListenAddr(":50007")
+	// We set this explicitly, even though it may be the default in anacrolix/torrent, as confluence
+	// is typically used as a service and an unpredictable port could break things for users.
+	cfg.SetListenAddr(":42069")
 	cfg.Callbacks = callbacks
 	cfg.DisablePEX = !flags.Pex
 
