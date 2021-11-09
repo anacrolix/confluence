@@ -20,5 +20,6 @@ func (h *Handler) initMux() {
 			})).ServeHTTP(w, r.Request)
 		}))
 		mux.Handle("/metainfo", h.withTorrentContext(h.metainfoHandler))
+		mux.HandleFunc("/bep44", h.handleBep44)
 	})
 }

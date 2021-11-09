@@ -74,7 +74,11 @@ var flags = struct {
 	InitSqliteStorageSchema: true,
 }
 
-func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (ret *torrent.Client, err error) {
+func newTorrentClient(
+	storage storage.ClientImpl, callbacks torrent.Callbacks,
+) (
+	tc *torrent.Client, err error,
+) {
 	blocklist, err := iplist.MMapPackedFile("packed-blocklist")
 	if err != nil {
 		log.Print(err)
@@ -84,7 +88,7 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 				blocklist.Close()
 			} else {
 				go func() {
-					<-ret.Closed()
+					<-tc.Closed()
 					blocklist.Close()
 				}()
 			}
@@ -262,7 +266,7 @@ func mainErr() error {
 	}
 	defer l.Close()
 	log.Printf("serving http at %s", l.Addr())
-	var h http.Handler = &confluence.Handler{
+	ch := confluence.Handler{
 		TC:           cl,
 		TorrentGrace: flags.TorrentGrace,
 		OnTorrentGrace: func(t *torrent.Torrent) {
@@ -278,6 +282,10 @@ func mainErr() error {
 		},
 		MetainfoStorage: squirrelCache,
 	}
+	for _, s := range cl.DhtServers() {
+		ch.DhtServers = append(ch.DhtServers, s.(torrent.AnacrolixDhtServerWrapper).Server)
+	}
+	var h http.Handler = &ch
 	if flags.DebugOnMain {
 		h = func() http.Handler {
 			mux := http.NewServeMux()

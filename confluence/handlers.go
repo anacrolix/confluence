@@ -1,13 +1,17 @@
 package confluence
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"path"
 	"strconv"
+	"sync"
 
+	"github.com/anacrolix/dht/v2/bep44"
+	"github.com/anacrolix/dht/v2/exts/getput"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/metainfo"
@@ -185,4 +189,48 @@ func (h *Handler) PutMetainfo(t *torrent.Torrent, mi *metainfo.MetaInfo) error {
 		return err
 	}
 	return h.saveTorrentFile(t)
+}
+
+func (h *Handler) handleBep44(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	var target bep44.Target
+	targetBytes, err := hex.DecodeString(r.FormValue("target"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if copy(target[:], targetBytes) != len(target) {
+		http.Error(w, "target has bad length", http.StatusBadRequest)
+		return
+	}
+	if len(h.DhtServers) == 0 {
+		http.Error(w, "no dht servers", http.StatusInternalServerError)
+		return
+	}
+	var wg sync.WaitGroup
+	resChan := make(chan getput.GetResult, len(h.DhtServers))
+	wgDoneChan := make(chan struct{})
+	for _, s := range h.DhtServers {
+		s := s
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			res, _, err := getput.Get(r.Context(), target, s, nil, nil)
+			if err != nil {
+				log.Printf("error getting %x from %v: %v", target, s, err)
+				return
+			}
+			resChan <- res
+		}()
+	}
+	go func() {
+		wg.Wait()
+		close(wgDoneChan)
+	}()
+	select {
+	case res := <-resChan:
+		bencode.NewEncoder(w).Encode(res.V)
+	case <-wgDoneChan:
+		http.Error(w, "not found", http.StatusNotFound)
+	}
 }

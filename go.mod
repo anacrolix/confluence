@@ -2,14 +2,14 @@ module github.com/anacrolix/confluence
 
 require (
 	crawshaw.io/sqlite v0.3.3-0.20210127221821-98b1f83c5508
-	github.com/anacrolix/dht/v2 v2.10.5
+	github.com/anacrolix/dht/v2 v2.11.1-0.20211108034754-0f19ece30d00
 	github.com/anacrolix/envpprof v1.1.1
 	github.com/anacrolix/go-libutp v1.0.4
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/v2 v2.5.2
 	github.com/anacrolix/squirrel v0.1.1-0.20210914065657-81bc5ecdc43a
 	github.com/anacrolix/tagflag v1.3.0
-	github.com/anacrolix/torrent v1.32.0
+	github.com/anacrolix/torrent v1.35.1-0.20211108034701-c6ee03f449fa
 	github.com/arl/statsviz v0.4.0
 	github.com/prometheus/client_golang v1.11.0
 	golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6
@@ -17,8 +17,8 @@ require (
 
 require (
 	github.com/RoaringBitmap/roaring v0.9.4 // indirect
-	github.com/anacrolix/chansync v0.3.0-0 // indirect
-	github.com/anacrolix/log v0.9.0 // indirect
+	github.com/anacrolix/chansync v0.3.0 // indirect
+	github.com/anacrolix/log v0.10.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/mmsg v1.0.0 // indirect
 	github.com/anacrolix/multiless v0.2.0 // indirect
@@ -37,6 +37,7 @@ require (
 	github.com/elliotchance/orderedmap v1.4.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
@@ -71,7 +72,7 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20211002104244-808efd93c36d // indirect
+	golang.org/x/sys v0.0.0-20211023085530-d6a326fbbf70 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
