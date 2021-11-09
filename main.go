@@ -33,6 +33,7 @@ import (
 
 var flags = struct {
 	Addr               string        `help:"HTTP listen address"`
+	TorrentAddr        string        `default:":42069" help:"Torrent client address"`
 	PublicIp4          net.IP        `help:"Public IPv4 address"` // TODO: Rename
 	PublicIp6          net.IP        `help:"Public IPv6 address"`
 	UnlimitedCache     bool          `help:"Don't limit cache capacity"`
@@ -68,6 +69,7 @@ var flags = struct {
 	TcpPeers:      true,
 	UtpPeers:      true,
 	Pex:           true,
+	TorrentAddr:   ":42069",
 
 	InitSqliteStorageSchema: true,
 }
@@ -102,7 +104,7 @@ func newTorrentClient(storage storage.ClientImpl, callbacks torrent.Callbacks) (
 	cfg.DisableTrackers = flags.DisableTrackers
 	// We set this explicitly, even though it may be the default in anacrolix/torrent, as confluence
 	// is typically used as a service and an unpredictable port could break things for users.
-	cfg.SetListenAddr(":42069")
+	cfg.SetListenAddr(flags.TorrentAddr)
 	cfg.Callbacks = callbacks
 	cfg.DisablePEX = !flags.Pex
 
