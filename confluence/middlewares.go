@@ -20,15 +20,15 @@ import (
 func (h *Handler) GetTorrent(ih metainfo.Hash) (t *torrent.Torrent, new bool, release func()) {
 	ref := h.torrentRefs.NewRef(ih)
 	t, new = h.TC.AddTorrentInfoHash(ih)
-	//log.Printf("added ref for %v", ih)
+	// log.Printf("added ref for %v", ih)
 	ref.SetCloser(func() {
-		//log.Printf("running torrent ref closer for %v", ih)
+		// log.Printf("running torrent ref closer for %v", ih)
 		if h.OnTorrentGrace != nil {
 			h.OnTorrentGrace(t)
 		}
 	})
 	release = func() {
-		//log.Printf("releasing ref on %v", ih)
+		// log.Printf("releasing ref on %v", ih)
 		time.AfterFunc(h.TorrentGrace, ref.Release)
 	}
 	return
@@ -57,7 +57,7 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request))
 				}
 				return m.InfoHash, nil, func(t *torrent.Torrent) {
 					ts := [][]string{m.Trackers}
-					//log.Printf("adding trackers %v", ts)
+					// log.Printf("adding trackers %v", ts)
 					t.AddTrackers(ts)
 				}
 			}

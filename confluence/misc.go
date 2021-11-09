@@ -34,8 +34,8 @@ func (h *Handler) saveTorrentFile(t *torrent.Torrent) error {
 	if h.MetainfoStorage != nil {
 		return h.MetainfoStorage.Put(p, miBuf.Bytes())
 	}
-	os.MkdirAll(filepath.Dir(p), 0750)
-	f, err := os.OpenFile(filepath.FromSlash(p), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	os.MkdirAll(filepath.Dir(p), 0o750)
+	f, err := os.OpenFile(filepath.FromSlash(p), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o660)
 	if err != nil {
 		return err
 	}
