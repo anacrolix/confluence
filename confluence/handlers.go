@@ -215,7 +215,7 @@ func (h *Handler) handleBep44(w http.ResponseWriter, r *http.Request) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			res, _, err := getput.Get(r.Context(), target, s, nil, nil)
+			res, _, err := getput.Get(r.Context(), target, s, nil, []byte(r.FormValue("salt")))
 			if err != nil {
 				log.Printf("error getting %x from %v: %v", target, s, err)
 				return
