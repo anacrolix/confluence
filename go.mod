@@ -2,14 +2,14 @@ module github.com/anacrolix/confluence
 
 require (
 	crawshaw.io/sqlite v0.3.3-0.20210127221821-98b1f83c5508
-	github.com/anacrolix/dht/v2 v2.12.0
+	github.com/anacrolix/dht/v2 v2.12.1-0.20211112041319-5a641e1d6918
 	github.com/anacrolix/envpprof v1.1.1
 	github.com/anacrolix/go-libutp v1.0.4
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/v2 v2.5.2
 	github.com/anacrolix/squirrel v0.1.1-0.20210914065657-81bc5ecdc43a
 	github.com/anacrolix/tagflag v1.3.0
-	github.com/anacrolix/torrent v1.36.0
+	github.com/anacrolix/torrent v1.36.1-0.20211112045832-60dd68ede924
 	github.com/arl/statsviz v0.4.0
 	github.com/prometheus/client_golang v1.11.0
 	golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6

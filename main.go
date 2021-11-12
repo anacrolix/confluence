@@ -275,10 +275,17 @@ func mainErr() error {
 			onTorrentGraceExtra(ih)
 		},
 		OnNewTorrent: func(t *torrent.Torrent, mi *metainfo.MetaInfo) {
-			if !flags.OverrideTrackers && mi != nil {
-				t.AddTrackers(mi.UpvertedAnnounceList())
+			var spec *torrent.TorrentSpec
+			if mi != nil {
+				spec, _ = torrent.TorrentSpecFromMetaInfoErr(mi)
+			} else {
+				spec = new(torrent.TorrentSpec)
 			}
-			t.AddTrackers([][]string{flags.ImplicitTracker})
+			if flags.OverrideTrackers {
+				spec.Trackers = nil
+			}
+			spec.Trackers = append(spec.Trackers, flags.ImplicitTracker)
+			t.MergeSpec(spec)
 		},
 		MetainfoStorage: squirrelCache,
 	}
