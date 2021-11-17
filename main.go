@@ -32,16 +32,19 @@ import (
 )
 
 var flags = struct {
-	Addr               string        `help:"HTTP listen address"`
-	TorrentAddr        string        `default:":42069" help:"Torrent client address"`
-	PublicIp4          net.IP        `help:"Public IPv4 address"` // TODO: Rename
-	PublicIp6          net.IP        `help:"Public IPv6 address"`
-	UnlimitedCache     bool          `help:"Don't limit cache capacity"`
-	CacheCapacity      tagflag.Bytes `help:"Data cache capacity"`
-	TorrentGrace       time.Duration `help:"How long to wait to drop a torrent after its last request"`
-	FileDir            string        `help:"File-based storage directory, overrides piece storage"`
-	Seed               bool          `help:"Seed data"`
-	UPnPPortForwarding bool          `help:"Port forward via UPnP"`
+	Addr           string        `help:"HTTP listen address"`
+	TorrentAddr    string        `default:":42069" help:"Torrent client address"`
+	PublicIp4      net.IP        `help:"Public IPv4 address"` // TODO: Rename
+	PublicIp6      net.IP        `help:"Public IPv6 address"`
+	UnlimitedCache bool          `help:"Don't limit cache capacity"`
+	CacheCapacity  tagflag.Bytes `help:"Data cache capacity"`
+
+	TorrentGrace   time.Duration `help:"How long to wait to drop a torrent after its last request"`
+	ExpireTorrents bool          `help:"Drop torrents after no use for a period"`
+
+	FileDir            string `help:"File-based storage directory, overrides piece storage"`
+	Seed               bool   `help:"Seed data"`
+	UPnPPortForwarding bool   `help:"Port forward via UPnP"`
 	// You'd want this if access to the main HTTP service is trusted, such as used over localhost by
 	// other known services.
 	DebugOnMain      bool `help:"Expose default serve mux /debug/ endpoints over http"`
@@ -62,14 +65,15 @@ var flags = struct {
 
 	AnalyzePeerUploadOrder bool `help:"Installs the peer upload order analysis"`
 }{
-	Addr:          "localhost:8080",
-	CacheCapacity: 10 << 30,
-	TorrentGrace:  time.Minute,
-	Dht:           true,
-	TcpPeers:      true,
-	UtpPeers:      true,
-	Pex:           true,
-	TorrentAddr:   ":42069",
+	Addr:           "localhost:8080",
+	CacheCapacity:  10 << 30,
+	TorrentGrace:   time.Minute,
+	ExpireTorrents: true,
+	Dht:            true,
+	TcpPeers:       true,
+	UtpPeers:       true,
+	Pex:            true,
+	TorrentAddr:    ":42069",
 
 	InitSqliteStorageSchema: true,
 }
@@ -183,13 +187,15 @@ func getStorageResourceProvider() (_ resource.Provider, close func() error) {
 	return fc.AsResourceProvider(), func() error { return nil }
 }
 
-func newClientStorage(squirrelCache *squirrel.Cache) (_ storage.ClientImpl, onTorrentGrace func(torrent.InfoHash), close func() error) {
+func newClientStorage(squirrelCache *squirrel.Cache) (
+	_ storage.ClientImpl,
+	onTorrentDrop func(torrent.InfoHash), // Storage cleanup for Torrents that are dropped.
+	close func() error, // Extra Client-storage-wide cleanup (for ClientImpls that need closing).
+) {
 	if flags.FileDir != "" {
-		return storage.NewFileByInfoHash(flags.FileDir),
-			func(ih torrent.InfoHash) {
-				os.RemoveAll(filepath.Join(flags.FileDir, ih.HexString()))
-			},
-			func() error { return nil }
+		return storage.NewFileByInfoHash(flags.FileDir), func(ih torrent.InfoHash) {
+			os.RemoveAll(filepath.Join(flags.FileDir, ih.HexString()))
+		}, func() error { return nil }
 	}
 	if path := flags.SqliteStorage; path != nil {
 		sci := sqliteStorage.NewWrappingClient(squirrelCache)
@@ -229,7 +235,7 @@ func mainErr() error {
 		squirrelCache = newSquirrelCache(*s)
 		defer squirrelCache.Close()
 	}
-	storage, onTorrentGraceExtra, closeStorage := newClientStorage(squirrelCache)
+	storage, onTorrentDrop, closeStorage := newClientStorage(squirrelCache)
 	defer closeStorage()
 	cl, err := newTorrentClient(storage, torrentCallbacks)
 	if err != nil {
@@ -269,11 +275,6 @@ func mainErr() error {
 	ch := confluence.Handler{
 		TC:           cl,
 		TorrentGrace: flags.TorrentGrace,
-		OnTorrentGrace: func(t *torrent.Torrent) {
-			ih := t.InfoHash()
-			t.Drop()
-			onTorrentGraceExtra(ih)
-		},
 		OnNewTorrent: func(t *torrent.Torrent, mi *metainfo.MetaInfo) {
 			var spec *torrent.TorrentSpec
 			if mi != nil {
@@ -288,6 +289,13 @@ func mainErr() error {
 			t.MergeSpec(spec)
 		},
 		MetainfoStorage: squirrelCache,
+	}
+	if flags.ExpireTorrents {
+		ch.OnTorrentGrace = func(t *torrent.Torrent) {
+			ih := t.InfoHash()
+			t.Drop()
+			onTorrentDrop(ih)
+		}
 	}
 	for _, s := range cl.DhtServers() {
 		ch.DhtServers = append(ch.DhtServers, s.(torrent.AnacrolixDhtServerWrapper).Server)
