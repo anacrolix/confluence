@@ -2,14 +2,14 @@ module github.com/anacrolix/confluence
 
 require (
 	crawshaw.io/sqlite v0.3.3-0.20210127221821-98b1f83c5508
-	github.com/anacrolix/dht/v2 v2.12.1-0.20211112041319-5a641e1d6918
+	github.com/anacrolix/dht/v2 v2.13.0
 	github.com/anacrolix/envpprof v1.1.1
-	github.com/anacrolix/go-libutp v1.0.4
+	github.com/anacrolix/go-libutp v1.0.5-0.20211117031120-2dac1c67ecc5
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/v2 v2.5.2
 	github.com/anacrolix/squirrel v0.1.1-0.20210914065657-81bc5ecdc43a
 	github.com/anacrolix/tagflag v1.3.0
-	github.com/anacrolix/torrent v1.36.1-0.20211112045832-60dd68ede924
+	github.com/anacrolix/torrent v1.38.1-0.20211117032438-370fc56c16b1
 	github.com/arl/statsviz v0.4.0
 	github.com/prometheus/client_golang v1.11.0
 	golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6
@@ -66,9 +66,6 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/rs/dnscache v0.0.0-20210201191234-295bba877686 // indirect
 	github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46 // indirect
-	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/willf/bitset v1.1.11 // indirect
-	github.com/willf/bloom v2.0.3+incompatible // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
