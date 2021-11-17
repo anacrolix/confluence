@@ -79,5 +79,3 @@ require (
 )
 
 go 1.17
-
-exclude github.com/willf/bitset v1.2.0
