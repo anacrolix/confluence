@@ -1,7 +1,6 @@
 module github.com/anacrolix/confluence
 
 require (
-	crawshaw.io/sqlite v0.3.3-0.20210127221821-98b1f83c5508
 	github.com/anacrolix/dht/v2 v2.13.1-0.20211209181115-6ae2bd446b12
 	github.com/anacrolix/envpprof v1.1.1
 	github.com/anacrolix/go-libutp v1.1.0
@@ -13,6 +12,7 @@ require (
 	github.com/arl/statsviz v0.4.0
 	github.com/prometheus/client_golang v1.11.0
 	golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6
+	zombiezen.com/go/sqlite v0.8.0
 )
 
 require (
@@ -78,7 +78,6 @@ require (
 	modernc.org/mathutil v1.4.1 // indirect
 	modernc.org/memory v1.0.5 // indirect
 	modernc.org/sqlite v1.14.2-0.20211125151325-d4ed92c0a70f // indirect
-	zombiezen.com/go/sqlite v0.8.0 // indirect
 )
 
 go 1.17

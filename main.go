@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"crawshaw.io/sqlite"
 	"github.com/anacrolix/confluence/confluence"
 	debug_writer "github.com/anacrolix/confluence/debug-writer"
 	"github.com/anacrolix/dht/v2"
@@ -29,6 +28,7 @@ import (
 	"github.com/anacrolix/torrent/storage"
 	sqliteStorage "github.com/anacrolix/torrent/storage/sqlite"
 	"github.com/arl/statsviz"
+	"zombiezen.com/go/sqlite"
 )
 
 var flags = struct {
