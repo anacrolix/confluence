@@ -2,14 +2,14 @@ module github.com/anacrolix/confluence
 
 require (
 	crawshaw.io/sqlite v0.3.3-0.20210127221821-98b1f83c5508
-	github.com/anacrolix/dht/v2 v2.13.0
+	github.com/anacrolix/dht/v2 v2.13.1-0.20211209181115-6ae2bd446b12
 	github.com/anacrolix/envpprof v1.1.1
-	github.com/anacrolix/go-libutp v1.0.5-0.20211117031120-2dac1c67ecc5
+	github.com/anacrolix/go-libutp v1.1.0
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/v2 v2.5.2
-	github.com/anacrolix/squirrel v0.1.1-0.20210914065657-81bc5ecdc43a
+	github.com/anacrolix/squirrel v0.2.1-0.20211119092713-2efaee06d169
 	github.com/anacrolix/tagflag v1.3.0
-	github.com/anacrolix/torrent v1.38.1-0.20211117032438-370fc56c16b1
+	github.com/anacrolix/torrent v1.39.1
 	github.com/arl/statsviz v0.4.0
 	github.com/prometheus/client_golang v1.11.0
 	golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6
@@ -37,10 +37,10 @@ require (
 	github.com/elliotchance/orderedmap v1.4.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pion/datachannel v1.4.21 // indirect
@@ -64,6 +64,7 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.31.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/rs/dnscache v0.0.0-20210201191234-295bba877686 // indirect
 	github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
@@ -73,6 +74,11 @@ require (
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
+	modernc.org/libc v1.11.82 // indirect
+	modernc.org/mathutil v1.4.1 // indirect
+	modernc.org/memory v1.0.5 // indirect
+	modernc.org/sqlite v1.14.2-0.20211125151325-d4ed92c0a70f // indirect
+	zombiezen.com/go/sqlite v0.8.0 // indirect
 )
 
 go 1.17
