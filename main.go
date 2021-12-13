@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/anacrolix/confluence/confluence"
@@ -16,6 +19,7 @@ import (
 	peer_store "github.com/anacrolix/dht/v2/peer-store"
 	_ "github.com/anacrolix/envpprof"
 	utp "github.com/anacrolix/go-libutp"
+	"github.com/anacrolix/lsan"
 	"github.com/anacrolix/missinggo/v2/filecache"
 	"github.com/anacrolix/missinggo/v2/resource"
 	"github.com/anacrolix/missinggo/x"
@@ -206,17 +210,24 @@ func newClientStorage(squirrelCache *squirrel.Cache) (
 }
 
 func main() {
+	lsan.LeakABit()
 	statsviz.RegisterDefault()
 	log.SetFlags(log.Flags() | log.Lshortfile)
 	tagflag.Parse(&flags)
-	err := mainErr()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGTERM)
+	defer cancel()
+	err := mainErr(ctx)
+	// Can't defer this, it seems to run at a bad time on Linux and complains.
+	lsan.DoLeakCheck()
 	if err != nil {
 		log.Printf("error in main: %v", err)
 		os.Exit(1)
 	}
 }
 
-func mainErr() error {
+func mainErr(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	torrentCallbacks := torrent.Callbacks{}
 	if flags.CollectCamouflageData {
 		sqliteConn, err := sqlite.OpenConn("file:confluence.db", 0)
@@ -311,5 +322,19 @@ func mainErr() error {
 		}()
 	}
 	registerNumTorrentsMetric(cl)
-	return http.Serve(l, h)
+	httpServer := http.Server{
+		Handler: h,
+	}
+	go func() {
+		<-ctx.Done()
+		err := httpServer.Close()
+		if err != nil {
+			log.Printf("closing http server: %v", err)
+		}
+	}()
+	err = httpServer.Serve(l)
+	if err != nil {
+		err = fmt.Errorf("serving http: %w", err)
+	}
+	return err
 }

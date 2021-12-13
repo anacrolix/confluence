@@ -4,6 +4,7 @@ require (
 	github.com/anacrolix/dht/v2 v2.14.0
 	github.com/anacrolix/envpprof v1.1.1
 	github.com/anacrolix/go-libutp v1.1.0
+	github.com/anacrolix/lsan v0.0.0-20211126224158-8873cd3cbae1
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/v2 v2.5.2
 	github.com/anacrolix/squirrel v0.2.1-0.20211119092713-2efaee06d169
