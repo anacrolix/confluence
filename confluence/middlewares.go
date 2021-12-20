@@ -11,6 +11,8 @@ import (
 	"path"
 	"path/filepath"
 	"time"
+	"strings"
+	"net/url"
 
 	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/torrent"
@@ -50,6 +52,13 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request))
 		ih, err, afterAdd := func() (ih metainfo.Hash, err error, afterAdd func(t *torrent.Torrent)) {
 			q := r.URL.Query()
 			ms := q.Get("magnet")
+			parts := strings.SplitN(r.URL.Path, "/", 5)
+			//   /<handler>/magnet|infohash/<magnet or infohash>/...
+			//[0] [1]      [2]             [3]                   [4]
+			if ms == "" && len(parts) >= 4 && parts[2] == "magnet" {
+				ms, err = url.PathUnescape(parts[3])
+			}
+
 			if ms != "" {
 				m, err := metainfo.ParseMagnetUri(ms)
 				if err != nil {
@@ -61,8 +70,12 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request))
 					t.AddTrackers(ts)
 				}
 			}
-			if ihqv := q.Get(infohashQueryKey); ihqv != "" {
-				err = ih.FromHexString(q.Get(infohashQueryKey))
+			ihhex := q.Get(infohashQueryKey)
+			if ihhex == "" && len(parts) >= 4 && parts[2] == "infohash" {
+				ihhex = parts[3]
+			}
+			if ihhex != "" {
+				err = ih.FromHexString(ihhex)
 				return
 			}
 			err = fmt.Errorf("expected nonempty query parameter %q or %q", magnetQueryKey, infohashQueryKey)

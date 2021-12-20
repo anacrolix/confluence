@@ -9,6 +9,7 @@ import (
 	"path"
 	"strconv"
 	"sync"
+	"strings"
 
 	"github.com/anacrolix/dht/v2/bep44"
 	"github.com/anacrolix/dht/v2/exts/getput"
@@ -26,15 +27,22 @@ func dataHandler(w http.ResponseWriter, r *request) {
 			"Content-Disposition", "filename="+strconv.Quote(q.Get("filename")),
 		)
 	}
-	if len(q["path"]) == 0 {
+	filepath := q.Get("path")
+	if filepath == "" {
+		parts := strings.SplitN(r.URL.Path, "/", 5)
+		if len(parts) == 5 {
+			filepath = parts[4]
+		}
+	}
+	if filepath == "" {
 		ServeTorrent(w, r.Request, t)
 	} else {
 		if !q.Has("filename") {
 			w.Header().Set(
-				"Content-Disposition", "filename="+strconv.Quote(path.Base(q.Get("path"))),
+				"Content-Disposition", "filename="+strconv.Quote(path.Base(filepath)),
 			)
 		}
-		ServeFile(w, r.Request, t, q.Get("path"))
+		ServeFile(w, r.Request, t, filepath)
 	}
 }
 
