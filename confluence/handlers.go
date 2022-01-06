@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/anacrolix/dht/v2/bep44"
@@ -18,24 +18,43 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func dataHandler(w http.ResponseWriter, r *request) {
+const filePathQueryKey = "path"
+
+func dataQueryHandler(w http.ResponseWriter, r *request) {
+	q := r.URL.Query()
+	dataHandler(w, r, q.Get(filePathQueryKey),
+		// I'm not sure if we can use q.Has for this test, and the behaviour might differ.
+		len(q[filePathQueryKey]) != 0)
+}
+
+func dataPathHandler(w http.ResponseWriter, r *request) {
+	dp := strings.TrimPrefix(r.URL.Path, "/")
+	dataHandler(w, r, dp, len(dp) != 0)
+}
+
+func setFilenameContentDisposition(w http.ResponseWriter, filename string) {
+	w.Header().Set("Content-Disposition", "filename="+strconv.Quote(filename))
+}
+
+func dataHandler(w http.ResponseWriter, r *request,
+	// TODO: Use a generic Option type.
+	filePath string, filePathOk bool,
+) {
 	q := r.URL.Query()
 	t := r.torrent
-	if q.Has("filename") {
-		w.Header().Set(
-			"Content-Disposition", "filename="+strconv.Quote(q.Get("filename")),
-		)
+	const filenameQueryKey = "filename"
+	hasFilename := q.Has(filenameQueryKey)
+	if hasFilename {
+		setFilenameContentDisposition(w, q.Get(filenameQueryKey))
 	}
-	if len(q["path"]) == 0 {
+	if !filePathOk {
 		ServeTorrent(w, r.Request, t)
-	} else {
-		if !q.Has("filename") {
-			w.Header().Set(
-				"Content-Disposition", "filename="+strconv.Quote(path.Base(q.Get("path"))),
-			)
-		}
-		ServeFile(w, r.Request, t, q.Get("path"))
+		return
 	}
+	if !hasFilename {
+		setFilenameContentDisposition(w, filePath)
+	}
+	ServeFile(w, r.Request, t, filePath)
 }
 
 func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +132,7 @@ func eventHandler(w http.ResponseWriter, r *request) {
 }
 
 func fileStateHandler(w http.ResponseWriter, r *request) {
-	path_ := r.URL.Query().Get("path")
+	path_ := r.URL.Query().Get(filePathQueryKey)
 	f := torrentFileByPath(r.torrent, path_)
 	if f == nil {
 		http.Error(w, "file not found", http.StatusNotFound)
