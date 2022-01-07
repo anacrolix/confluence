@@ -10,7 +10,9 @@ func (h *Handler) initMux() {
 	h.initMuxOnce.Do(func() {
 		mux := &h.mux
 		mux.Handle("/data", h.withTorrentContextFromQuery(dataQueryHandler))
-		mux.Handle("/data/", http.StripPrefix("/data", h.withTorrentContextFromPath(dataPathHandler)))
+		mux.Handle("/data/infohash/", http.StripPrefix(
+			"/data/infohash",
+			h.withTorrentContextFromInfohashPath(dataPathHandler)))
 		mux.HandleFunc("/status", h.statusHandler)
 		mux.Handle("/info", h.withTorrentContextFromQuery(infoHandler))
 		mux.Handle("/events", h.withTorrentContextFromQuery(eventHandler))

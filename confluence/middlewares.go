@@ -110,7 +110,7 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request),
 	})
 }
 
-func (me *Handler) withTorrentContextFromPath(h func(http.ResponseWriter, *request)) http.Handler {
+func (me *Handler) withTorrentContextFromInfohashPath(h func(http.ResponseWriter, *request)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		me.withTorrentContext(h, func() (ih metainfo.Hash, err error, afterAdd func(t *torrent.Torrent)) {
 			p := r.URL.Path
