@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/anacrolix/squirrel"
@@ -45,9 +46,9 @@ type request struct {
 	*http.Request
 }
 
-func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request)) http.Handler {
+func (me *Handler) withTorrentContextFromQuery(h func(w http.ResponseWriter, r *request)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ih, err, afterAdd := func() (ih metainfo.Hash, err error, afterAdd func(t *torrent.Torrent)) {
+		me.withTorrentContext(h, func() (ih metainfo.Hash, err error, afterAdd func(t *torrent.Torrent)) {
 			q := r.URL.Query()
 			ms := q.Get("magnet")
 			if ms != "" {
@@ -67,7 +68,18 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request))
 			}
 			err = fmt.Errorf("expected nonempty query parameter %q or %q", magnetQueryKey, infohashQueryKey)
 			return
-		}()
+		}).ServeHTTP(w, r)
+	})
+}
+
+// Determines intended torrent for a request, and any extra behaviour that can be implied when
+// adding it to the torrent Client.
+type torrentContextGetter func() (ih metainfo.Hash, err error, afterAdd func(t *torrent.Torrent))
+
+// Returns a middleware that calls in to a handler that expects a Torrent.
+func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request), getTorrent torrentContextGetter) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ih, err, afterAdd := getTorrent()
 		if err != nil {
 			http.Error(w, fmt.Errorf("error determining requested infohash: %w", err).Error(), http.StatusBadRequest)
 			return
@@ -95,6 +107,27 @@ func (me *Handler) withTorrentContext(h func(w http.ResponseWriter, r *request))
 		}
 		me.saveTorrentFile(t)
 		h(w, &request{t, me, r})
+	})
+}
+
+func (me *Handler) withTorrentContextFromInfohashPath(h func(http.ResponseWriter, *request)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		me.withTorrentContext(h, func() (ih metainfo.Hash, err error, afterAdd func(t *torrent.Torrent)) {
+			p := r.URL.Path
+			start := 1 // path should always start with /
+			end := strings.IndexByte(p[start:], '/')
+			if end == -1 {
+				// There's no next path segment, that might be okay.
+				end = len(p)
+			} else {
+				end += start
+			}
+			err = ih.FromHexString(p[start:end])
+			// Note that we're modifying our caller's Request, and not modifying RawPath, both of
+			// which could be dangerous.
+			r.URL.Path = p[end:]
+			return
+		}).ServeHTTP(w, r)
 	})
 }
 
