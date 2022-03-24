@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -190,7 +191,7 @@ func getStorageResourceProvider() (_ resource.Provider, close func() error) {
 func newClientStorage(squirrelCache *squirrel.Cache) (
 	_ storage.ClientImpl,
 	onTorrentDrop func(torrent.InfoHash), // Storage cleanup for Torrents that are dropped.
-	close func() error, // Extra Client-storage-wide cleanup (for ClientImpls that need closing).
+	close func() error,                   // Extra Client-storage-wide cleanup (for ClientImpls that need closing).
 ) {
 	if flags.FileDir != "" {
 		return storage.NewFileByInfoHash(flags.FileDir), func(ih torrent.InfoHash) {
@@ -265,6 +266,9 @@ func mainErr() error {
 	})
 	http.HandleFunc("/debug/utp", func(w http.ResponseWriter, r *http.Request) {
 		utp.WriteStatus(w)
+	})
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		cl.WriteStatus(io.Discard)
 	})
 	l, err := net.Listen("tcp", flags.Addr)
 	if err != nil {
