@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -20,6 +21,7 @@ import (
 	"github.com/anacrolix/missinggo/v2/filecache"
 	"github.com/anacrolix/missinggo/v2/resource"
 	"github.com/anacrolix/missinggo/x"
+	"github.com/anacrolix/publicip"
 	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/tagflag"
 	"github.com/anacrolix/torrent"
@@ -80,7 +82,7 @@ var flags = struct {
 }
 
 func newTorrentClient(
-	storage storage.ClientImpl, callbacks torrent.Callbacks,
+	ctx context.Context, storage storage.ClientImpl, callbacks torrent.Callbacks,
 ) (
 	tc *torrent.Client, err error,
 ) {
@@ -106,7 +108,19 @@ func newTorrentClient(
 	cfg.IPBlocklist = blocklist
 	cfg.DefaultStorage = storage
 	cfg.PublicIp4 = flags.PublicIp4
+	if cfg.PublicIp4 == nil {
+		cfg.PublicIp4, err = publicip.Get4(ctx)
+		if err != nil {
+			log.Printf("error getting public ipv4 address: %v", err)
+		}
+	}
 	cfg.PublicIp6 = flags.PublicIp6
+	if cfg.PublicIp6 == nil {
+		cfg.PublicIp6, err = publicip.Get6(ctx)
+		if err != nil {
+			log.Printf("error getting public ipv6 address: %v", err)
+		}
+	}
 	cfg.Seed = flags.Seed
 	cfg.NoDefaultPortForwarding = !flags.UPnPPortForwarding
 	cfg.NoDHT = !flags.Dht
@@ -238,7 +252,7 @@ func mainErr() error {
 	}
 	storage, onTorrentDrop, closeStorage := newClientStorage(squirrelCache)
 	defer closeStorage()
-	cl, err := newTorrentClient(storage, torrentCallbacks)
+	cl, err := newTorrentClient(context.TODO(), storage, torrentCallbacks)
 	if err != nil {
 		return fmt.Errorf("creating torrent client: %w", err)
 	}

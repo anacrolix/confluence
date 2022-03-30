@@ -178,6 +178,7 @@ github.com/anacrolix/multiless v0.1.1-0.20210529082330-de2f6cf29619/go.mod h1:Tr
 github.com/anacrolix/multiless v0.2.0/go.mod h1:TrCLEZfIDbMVfLoQt5tOoiBS/uq4y8+ojuEVVvTNPX4=
 github.com/anacrolix/multiless v0.2.1-0.20211218050420-533661eef5dc h1:K047jUtd0Xv4SEpv/5DoBgDvj4ZNpT1SOVtMlFpRrh0=
 github.com/anacrolix/multiless v0.2.1-0.20211218050420-533661eef5dc/go.mod h1:TrCLEZfIDbMVfLoQt5tOoiBS/uq4y8+ojuEVVvTNPX4=
+github.com/anacrolix/publicip v0.2.0 h1:n/BmRxXRlOT/wQFd6Xhu57r9uTU+Xvb9MyEkLooh3TU=
 github.com/anacrolix/publicip v0.2.0/go.mod h1:67G1lVkLo8UjdEcJkwScWVTvlJ35OCDsRJoWXl/wi4g=
 github.com/anacrolix/squirrel v0.1.0/go.mod h1:YzgVvikMdFD441oTWlNG189bpKabO9Sbf3uCSVgca04=
 github.com/anacrolix/squirrel v0.1.1-0.20210914065657-81bc5ecdc43a/go.mod h1:YzgVvikMdFD441oTWlNG189bpKabO9Sbf3uCSVgca04=

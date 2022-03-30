@@ -6,6 +6,7 @@ require (
 	github.com/anacrolix/go-libutp v1.2.0
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/v2 v2.6.0
+	github.com/anacrolix/publicip v0.2.0
 	github.com/anacrolix/squirrel v0.4.1-0.20220122230132-14b040773bac
 	github.com/anacrolix/tagflag v1.3.0
 	github.com/anacrolix/torrent v1.41.1-0.20220317221550-dd1ca6f51475
