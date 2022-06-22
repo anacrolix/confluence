@@ -1,6 +1,7 @@
 package confluence
 
 import (
+	"github.com/anacrolix/torrent/storage"
 	"net/http"
 	"sync"
 	"time"
@@ -21,6 +22,9 @@ type Handler struct {
 	// Called as soon as a new torrent is added, with the cached metainfo if it's found.
 	OnNewTorrent func(newTorrent *torrent.Torrent, cachedMetainfo *metainfo.MetaInfo)
 	DhtServers   []*dht.Server
+	Storage      *storage.Client
+	// Alter metainfos returned from upload handler. For example to add trackers, nodes, comments etc.
+	ModifyUploadMetainfo func(mi *metainfo.MetaInfo)
 
 	mux         http.ServeMux
 	initMuxOnce sync.Once

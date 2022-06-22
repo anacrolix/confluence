@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/anacrolix/confluence/confluence"
@@ -205,7 +206,7 @@ func getStorageResourceProvider() (_ resource.Provider, close func() error) {
 func newClientStorage(squirrelCache *squirrel.Cache) (
 	_ storage.ClientImpl,
 	onTorrentDrop func(torrent.InfoHash), // Storage cleanup for Torrents that are dropped.
-	close func() error,                   // Extra Client-storage-wide cleanup (for ClientImpls that need closing).
+	close func() error, // Extra Client-storage-wide cleanup (for ClientImpls that need closing).
 ) {
 	if flags.FileDir != "" {
 		return storage.NewFileByInfoHash(flags.FileDir), func(ih torrent.InfoHash) {
@@ -250,9 +251,9 @@ func mainErr() error {
 		squirrelCache = newSquirrelCache(*s)
 		defer squirrelCache.Close()
 	}
-	storage, onTorrentDrop, closeStorage := newClientStorage(squirrelCache)
+	clientStorageImpl, onTorrentDrop, closeStorage := newClientStorage(squirrelCache)
 	defer closeStorage()
-	cl, err := newTorrentClient(context.TODO(), storage, torrentCallbacks)
+	cl, err := newTorrentClient(context.TODO(), clientStorageImpl, torrentCallbacks)
 	if err != nil {
 		return fmt.Errorf("creating torrent client: %w", err)
 	}
@@ -307,6 +308,15 @@ func mainErr() error {
 			t.MergeSpec(spec)
 		},
 		MetainfoStorage: squirrelCache,
+		ModifyUploadMetainfo: func(mi *metainfo.MetaInfo) {
+			mi.AnnounceList = append(mi.AnnounceList, flags.ImplicitTracker)
+			for _, ip := range cl.PublicIPs() {
+				mi.Nodes = append(mi.Nodes, metainfo.Node(net.JoinHostPort(
+					ip.String(),
+					strconv.FormatInt(int64(cl.LocalPort()), 10))))
+			}
+		},
+		Storage: storage.NewClient(clientStorageImpl),
 	}
 	if flags.ExpireTorrents {
 		ch.OnTorrentGrace = func(t *torrent.Torrent) {
