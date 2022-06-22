@@ -4,11 +4,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/anacrolix/dht/v2/bep44"
 	"github.com/anacrolix/dht/v2/exts/getput"
@@ -37,7 +39,7 @@ func setFilenameContentDisposition(w http.ResponseWriter, filename string) {
 }
 
 func dataHandler(w http.ResponseWriter, r *request,
-	// TODO: Use a generic Option type.
+// TODO: Use a generic Option type.
 	filePath string, filePathOk bool,
 ) {
 	q := r.URL.Query()
@@ -249,4 +251,55 @@ func (h *Handler) handleBep44(w http.ResponseWriter, r *http.Request) {
 	case <-wgDoneChan:
 		http.Error(w, "not found", http.StatusNotFound)
 	}
+}
+
+func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		err = fmt.Errorf("parsing multipart form: %w", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var info metainfo.Info
+	info.PieceLength = 1 << 8 << 10
+	piecesReader, piecesWriter := io.Pipe()
+	generatePiecesErrChan := make(chan error, 1)
+	go func() {
+		var err error
+		info.Pieces, err = metainfo.GeneratePieces(piecesReader, info.PieceLength, nil)
+		generatePiecesErrChan <- err
+	}()
+	for _, fh := range r.MultipartForm.File["files"] {
+		file, err := fh.Open()
+		path := strings.Split(fh.Filename, "/")
+		info.Files = append(info.Files, metainfo.FileInfo{
+			Length:   fh.Size,
+			Path:     path,
+			PathUtf8: path,
+		})
+		n, err := io.Copy(piecesWriter, file)
+		if err != nil {
+			panic(err)
+		}
+		if n != fh.Size {
+			panic(n)
+		}
+		file.Close()
+	}
+	piecesWriter.Close()
+	generatePiecesErr := <-generatePiecesErrChan
+	if generatePiecesErr != nil {
+		panic(generatePiecesErr)
+	}
+	mi := metainfo.MetaInfo{
+		InfoBytes: bencode.MustMarshal(info),
+		// TODO: Implicit confluence trackers
+		// TODO: Self as node
+		CreatedBy:    "anacrolix/confluence upload",
+		CreationDate: time.Now().Unix(),
+		// TODO: btlink gateway as webseed?
+	}
+	h.saveMetaInfo(mi, mi.HashInfoBytes())
+	mi.Write(w)
+
 }

@@ -2,6 +2,7 @@ package confluence
 
 import (
 	"bytes"
+	"github.com/anacrolix/torrent/metainfo"
 	"io"
 	"net/http"
 	"os"
@@ -25,12 +26,17 @@ func torrentFileByPath(t *torrent.Torrent, path_ string) *torrent.File {
 }
 
 func (h *Handler) saveTorrentFile(t *torrent.Torrent) error {
+	return h.saveMetaInfo(t.Metainfo(), t.InfoHash())
+}
+
+// Take info-hash separately in case we don't have the info-bytes.
+func (h *Handler) saveMetaInfo(mi metainfo.MetaInfo, ih torrent.InfoHash) error {
 	var miBuf bytes.Buffer
-	err := t.Metainfo().Write(&miBuf)
+	err := mi.Write(&miBuf)
 	if err != nil {
 		return err
 	}
-	p := path.Join(h.metainfoCacheDir(), t.InfoHash().HexString()+".torrent")
+	p := path.Join(h.metainfoCacheDir(), ih.HexString()+".torrent")
 	if h.MetainfoStorage != nil {
 		return h.MetainfoStorage.Put(p, miBuf.Bytes())
 	}

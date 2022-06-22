@@ -28,5 +28,6 @@ func (h *Handler) initMux() {
 		mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 			h.TC.WriteStatus(io.Discard)
 		})
+		mux.HandleFunc("/upload", h.uploadHandler)
 	})
 }
