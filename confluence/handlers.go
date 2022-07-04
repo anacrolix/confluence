@@ -262,8 +262,7 @@ func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	info := metainfo.Info{
-		PieceLength: 1 << 8 << 10,
-		Name:        r.MultipartForm.Value["name"][0],
+		Name: r.MultipartForm.Value["name"][0],
 	}
 	files := r.MultipartForm.File["files"]
 	for _, fh := range files {
@@ -274,6 +273,7 @@ func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 			PathUtf8: path,
 		})
 	}
+	info.PieceLength = metainfo.ChoosePieceLength(info.TotalLength())
 	piecesReader, piecesWriter := io.Pipe()
 	generatePiecesErrChan := make(chan error, 1)
 	go func() {
