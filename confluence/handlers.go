@@ -261,8 +261,10 @@ func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	var info metainfo.Info
-	info.PieceLength = 1 << 8 << 10
+	info := metainfo.Info{
+		PieceLength: 1 << 8 << 10,
+		Name:        r.MultipartForm.Value["name"][0],
+	}
 	files := r.MultipartForm.File["files"]
 	for _, fh := range files {
 		path := strings.Split(fh.Filename, "/")
