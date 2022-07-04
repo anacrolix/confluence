@@ -58,6 +58,7 @@ func (me *Handler) withTorrentContextFromQuery(h func(w http.ResponseWriter, r *
 				}
 				return m.InfoHash, nil, func(t *torrent.Torrent) {
 					ts := [][]string{m.Trackers}
+					// TODO: This bypasses OnNewTorrent, and the override trackers flag.
 					// log.Printf("adding trackers %v", ts)
 					t.AddTrackers(ts)
 				}
