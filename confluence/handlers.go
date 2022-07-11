@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/anacrolix/dht/v2/bep44"
 	"github.com/anacrolix/dht/v2/exts/getput"
+	"github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/metainfo"
@@ -236,7 +236,7 @@ func (h *Handler) handleBep44(w http.ResponseWriter, r *http.Request) {
 			defer wg.Done()
 			res, _, err := getput.Get(r.Context(), target, s, nil, []byte(r.FormValue("salt")))
 			if err != nil {
-				log.Printf("error getting %x from %v: %v", target, s, err)
+				h.Logger.Levelf(log.Warning, "error getting %x from %v: %v", target, s, err)
 				return
 			}
 			resChan <- res

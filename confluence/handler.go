@@ -1,7 +1,7 @@
 package confluence
 
 import (
-	"github.com/anacrolix/torrent/storage"
+	"github.com/anacrolix/log"
 	"net/http"
 	"sync"
 	"time"
@@ -11,9 +11,11 @@ import (
 	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/anacrolix/torrent/storage"
 )
 
 type Handler struct {
+	Logger           *log.Logger
 	TC               *torrent.Client
 	TorrentGrace     time.Duration
 	OnTorrentGrace   func(t *torrent.Torrent)
@@ -27,12 +29,12 @@ type Handler struct {
 	ModifyUploadMetainfo func(mi *metainfo.MetaInfo)
 
 	mux         http.ServeMux
-	initMuxOnce sync.Once
+	initOnce    sync.Once
 	torrentRefs refclose.RefPool
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.initMux()
+	h.init()
 	h.mux.ServeHTTP(w, r)
 }
 
