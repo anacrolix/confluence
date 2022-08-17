@@ -1,9 +1,10 @@
 package confluence
 
 import (
-	"github.com/anacrolix/log"
 	"io"
 	"net/http"
+
+	"github.com/anacrolix/log"
 
 	"github.com/anacrolix/missinggo/httptoo"
 )
@@ -28,7 +29,7 @@ func (h *Handler) init() {
 				fileStateHandler(w, r)
 			})).ServeHTTP(w, r.Request)
 		}))
-		mux.Handle("/metainfo", h.withTorrentContextFromQuery(h.metainfoHandler))
+		mux.HandleFunc("/metainfo", h.metainfoHandler)
 		mux.HandleFunc("/bep44", h.handleBep44)
 		mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 			h.TC.WriteStatus(io.Discard)

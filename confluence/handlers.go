@@ -143,11 +143,15 @@ func fileStateHandler(w http.ResponseWriter, r *request) {
 	json.NewEncoder(w).Encode(f.State())
 }
 
-func (h *Handler) metainfoHandler(w http.ResponseWriter, r *request) {
+func (h *Handler) metainfoHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		h.metainfoPostHandler(w, r)
 		return
 	}
+	h.withTorrentContextFromQuery(h.contextedMetainfoHandler).ServeHTTP(w, r)
+}
+
+func (h *Handler) contextedMetainfoHandler(w http.ResponseWriter, r *request) {
 
 	if !waitForTorrentInfo(w, r) {
 		return
@@ -189,18 +193,32 @@ func (h *Handler) metainfoHandler(w http.ResponseWriter, r *request) {
 	}
 }
 
-func (h *Handler) metainfoPostHandler(w http.ResponseWriter, r *request) {
+func (h *Handler) metainfoPostHandler(w http.ResponseWriter, r *http.Request) {
 	var mi metainfo.MetaInfo
 	err := bencode.NewDecoder(r.Body).Decode(&mi)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error decoding body: %s", err), http.StatusBadRequest)
 		return
 	}
-	h.PutMetainfo(r.torrent, &mi)
+	h.withTorrentContext(
+		func(w http.ResponseWriter, r *request) {
+			err := h.PutMetainfo(r.torrent, &mi)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("error putting metainfo: %s", err), http.StatusInternalServerError)
+				return
+			}
+			fmt.Fprintln(w, r.torrent.InfoHash().HexString())
+		},
+		func() (ih metainfo.Hash, err error, afterAdd func(t *torrent.Torrent)) {
+			ih = mi.HashInfoBytes()
+			return
+		},
+	).ServeHTTP(w, r)
 }
 
 // We require the Torrent to be given to ensure we don't infer a torrent from the MetaInfo without
-// any release semantics.
+// any release semantics. A torrent is needed to merge in the spec from the metainfo, and then to save the merged
+// metainfo.
 func (h *Handler) PutMetainfo(t *torrent.Torrent, mi *metainfo.MetaInfo) error {
 	spec, _ := torrent.TorrentSpecFromMetaInfoErr(mi)
 	err := t.MergeSpec(spec)
