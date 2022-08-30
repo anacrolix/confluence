@@ -74,7 +74,7 @@ func (me *Handler) withTorrentContextFromQuery(h func(w http.ResponseWriter, r *
 }
 
 // Determines intended torrent for a request, and any extra behaviour that can be implied when
-// adding it to the torrent Client.
+// adding it to the torrent Client, such as trackers and other metadata in a magnet link.
 type torrentContextGetter func() (ih metainfo.Hash, err error, afterAdd func(t *torrent.Torrent))
 
 // Returns a middleware that calls in to a handler that expects a Torrent.
