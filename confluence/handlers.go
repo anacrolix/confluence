@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -264,9 +265,22 @@ func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 	info := metainfo.Info{
 		Name: r.MultipartForm.Value["name"][0],
 	}
+	//spew.Dump(r.MultipartForm)
 	files := r.MultipartForm.File["files"]
 	for _, fh := range files {
-		path := strings.Split(fh.Filename, "/")
+		_, params, err := mime.ParseMediaType(fh.Header.Get("Content-Disposition"))
+		if err != nil {
+			err = fmt.Errorf("parsing file content-disposition: %w", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		filename, ok := params["filename"]
+		if !ok {
+			http.Error(w, "missing filename in Content-Disposition", http.StatusBadRequest)
+			return
+		}
+		// Can't use multipart.FileHeader.Filename because it's stripped of directory components.
+		path := strings.Split(filename, "/")
 		info.Files = append(info.Files, metainfo.FileInfo{
 			Length:   fh.Size,
 			Path:     path,
