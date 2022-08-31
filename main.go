@@ -12,8 +12,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/anacrolix/confluence/confluence"
-	debug_writer "github.com/anacrolix/confluence/debug-writer"
+	"github.com/arl/statsviz"
+	_ "github.com/honeycombio/honeycomb-opentelemetry-go"
+	"github.com/honeycombio/opentelemetry-go-contrib/launcher"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"zombiezen.com/go/sqlite"
+
 	"github.com/anacrolix/dht/v2"
 	"github.com/anacrolix/dht/v2/int160"
 	peer_store "github.com/anacrolix/dht/v2/peer-store"
@@ -31,8 +35,9 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
 	sqliteStorage "github.com/anacrolix/torrent/storage/sqlite"
-	"github.com/arl/statsviz"
-	"zombiezen.com/go/sqlite"
+
+	"github.com/anacrolix/confluence/confluence"
+	debug_writer "github.com/anacrolix/confluence/debug-writer"
 )
 
 var flags = struct {
@@ -339,5 +344,10 @@ func mainErr() error {
 		}()
 	}
 	registerNumTorrentsMetric(cl)
-	return http.Serve(l, h)
+	shutdownTelemetry, err := launcher.ConfigureOpenTelemetry()
+	if err != nil {
+		return fmt.Errorf("configuring open telemetry: %w", err)
+	}
+	defer shutdownTelemetry()
+	return http.Serve(l, otelhttp.NewHandler(h, "confluence"))
 }
