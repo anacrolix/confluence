@@ -346,7 +346,8 @@ func mainErr() error {
 	registerNumTorrentsMetric(cl)
 	shutdownTelemetry, err := launcher.ConfigureOpenTelemetry()
 	if err != nil {
-		return fmt.Errorf("configuring open telemetry: %w", err)
+		err = fmt.Errorf("configuring open telemetry: %w", err)
+		log.Print(err)
 	}
 	defer shutdownTelemetry()
 	return http.Serve(l, otelhttp.NewHandler(h, "confluence"))
