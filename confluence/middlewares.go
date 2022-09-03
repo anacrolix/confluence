@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -147,12 +146,17 @@ func (h *Handler) cachedMetaInfo(infoHash metainfo.Hash) (*metainfo.MetaInfo, er
 	p := path.Join(h.metainfoCacheDir(), infoHash.HexString()+".torrent")
 	miR, err := func() (io.ReadCloser, error) {
 		if h.MetainfoStorage != nil {
-			var b squirrel.PinnedBlob
-			b, err := h.MetainfoStorage.Open(p)
+			b, err := h.MetainfoStorage.OpenUnflushable(p)
 			if err != nil {
 				return nil, fmt.Errorf("opening from metainfo storage: %w", err)
 			}
-			return io.NopCloser(io.NewSectionReader(b, 0, b.Length())), nil
+			return struct {
+				io.Reader
+				io.Closer
+			}{
+				io.NewSectionReader(b, 0, b.Length()),
+				b,
+			}, nil
 		}
 		return os.Open(filepath.FromSlash(p))
 	}()

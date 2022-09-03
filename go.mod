@@ -8,7 +8,7 @@ require (
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/v2 v2.7.0
 	github.com/anacrolix/publicip v0.2.0
-	github.com/anacrolix/squirrel v0.4.1-0.20220122230132-14b040773bac
+	github.com/anacrolix/squirrel v0.4.1-0.20220903122644-f24aa78cd96c
 	github.com/anacrolix/tagflag v1.3.0
 	github.com/anacrolix/torrent v1.46.1-0.20220703115642-b58aec9ca8bd
 	github.com/arl/statsviz v0.4.0
