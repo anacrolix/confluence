@@ -285,6 +285,10 @@ func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	//spew.Dump(r.MultipartForm)
 	files := r.MultipartForm.File["files"]
+	// Raw HTML directory file uploads don't support mixing files and directories with a single
+	// chooser. So if you need to select everything inside a directory, you have to upload the
+	// parent directory itself. This option strips that top-level directory name.
+	stripTopDirectory := len(r.MultipartForm.Value["strip-top-directory"]) > 0
 	for _, fh := range files {
 		_, params, err := mime.ParseMediaType(fh.Header.Get("Content-Disposition"))
 		if err != nil {
@@ -299,6 +303,10 @@ func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// Can't use multipart.FileHeader.Filename because it's stripped of directory components.
 		path := strings.Split(filename, "/")
+		// If the path only has a single component, it's a file in the top-level directory.
+		if len(path) > 1 && stripTopDirectory {
+			path = path[1:]
+		}
 		info.Files = append(info.Files, metainfo.FileInfo{
 			Length:   fh.Size,
 			Path:     path,
