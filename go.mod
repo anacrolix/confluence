@@ -1,16 +1,16 @@
 module github.com/anacrolix/confluence
 
 require (
-	github.com/anacrolix/dht/v2 v2.18.0
+	github.com/anacrolix/dht/v2 v2.19.2-0.20221106044631-6ec4b0c54818
 	github.com/anacrolix/envpprof v1.2.1
 	github.com/anacrolix/go-libutp v1.2.0
-	github.com/anacrolix/log v0.13.2-0.20220427063716-a4894bb521c6
+	github.com/anacrolix/log v0.13.2-0.20220711050817-613cb738ef30
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/v2 v2.7.0
 	github.com/anacrolix/publicip v0.2.0
 	github.com/anacrolix/squirrel v0.4.1-0.20220903122644-f24aa78cd96c
 	github.com/anacrolix/tagflag v1.3.0
-	github.com/anacrolix/torrent v1.46.1-0.20220703115642-b58aec9ca8bd
+	github.com/anacrolix/torrent v1.47.1-0.20221115123127-3e0f34934df4
 	github.com/arl/statsviz v0.4.0
 	github.com/honeycombio/honeycomb-opentelemetry-go v0.2.0
 	github.com/honeycombio/opentelemetry-go-contrib/launcher v0.0.0-20220824095536-e0b3dd3fbfe7
