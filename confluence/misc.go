@@ -2,7 +2,6 @@ package confluence
 
 import (
 	"bytes"
-	"github.com/anacrolix/torrent/metainfo"
 	"io"
 	"net/http"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 )
 
 // Path is the given request path.

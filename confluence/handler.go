@@ -1,12 +1,12 @@
 package confluence
 
 import (
-	"github.com/anacrolix/log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/anacrolix/dht/v2"
+	"github.com/anacrolix/log"
 	"github.com/anacrolix/missinggo/refclose"
 	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/torrent"

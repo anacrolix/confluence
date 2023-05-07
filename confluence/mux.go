@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/anacrolix/log"
-
 	"github.com/anacrolix/missinggo/httptoo"
 )
 

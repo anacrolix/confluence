@@ -1,8 +1,9 @@
 package confluence
 
 import (
-	"github.com/anacrolix/log"
 	"testing"
+
+	"github.com/anacrolix/log"
 )
 
 func TestHandlerDefaultInit(t *testing.T) {
