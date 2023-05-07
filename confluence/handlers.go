@@ -255,7 +255,7 @@ func (h *Handler) handleBep44(w http.ResponseWriter, r *http.Request) {
 			defer wg.Done()
 			res, _, err := getput.Get(r.Context(), target, s, nil, []byte(r.FormValue("salt")))
 			if err != nil {
-				h.Logger.Levelf(log.Warning, "error getting %x from %v: %v", target, s, err)
+				h.Logger.Levelf(log.Debug, "error getting %x from %v: %v", target, s, err)
 				return
 			}
 			resChan <- res
