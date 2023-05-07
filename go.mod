@@ -9,7 +9,7 @@ require (
 	github.com/anacrolix/missinggo/v2 v2.7.0
 	github.com/anacrolix/publicip v0.2.0
 	github.com/anacrolix/squirrel v0.4.1-0.20220903122644-f24aa78cd96c
-	github.com/anacrolix/tagflag v1.3.0
+	github.com/anacrolix/tagflag v1.4.0
 	github.com/anacrolix/torrent v1.47.1-0.20221115123127-3e0f34934df4
 	github.com/arl/statsviz v0.4.0
 	github.com/honeycombio/honeycomb-opentelemetry-go v0.2.0
