@@ -146,7 +146,7 @@ func (h *Handler) cachedMetaInfo(infoHash metainfo.Hash) (*metainfo.MetaInfo, er
 	p := path.Join(h.metainfoCacheDir(), infoHash.HexString()+".torrent")
 	miR, err := func() (io.ReadCloser, error) {
 		if h.MetainfoStorage != nil {
-			b, err := h.MetainfoStorage.OpenUnflushable(p)
+			b, err := h.MetainfoStorage.OpenPinned(p)
 			if err != nil {
 				return nil, fmt.Errorf("opening from metainfo storage: %w", err)
 			}
