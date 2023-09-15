@@ -3,6 +3,7 @@ package confluence
 import (
 	"errors"
 	"fmt"
+	"github.com/anacrolix/squirrel"
 	"io"
 	"io/fs"
 	"log"
@@ -160,7 +161,7 @@ func (h *Handler) cachedMetaInfo(infoHash metainfo.Hash) (*metainfo.MetaInfo, er
 		}
 		return os.Open(filepath.FromSlash(p))
 	}()
-	if errors.Is(err, fs.ErrNotExist) {
+	if errors.Is(err, fs.ErrNotExist) || errors.Is(err, squirrel.ErrNotFound) {
 		return nil, nil
 	}
 	if err != nil {
