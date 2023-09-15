@@ -1,6 +1,7 @@
 package confluence
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"github.com/anacrolix/squirrel"
@@ -168,7 +169,7 @@ func (h *Handler) cachedMetaInfo(infoHash metainfo.Hash) (*metainfo.MetaInfo, er
 		return nil, err
 	}
 	defer miR.Close()
-	mi, err := metainfo.Load(miR)
+	mi, err := metainfo.Load(bufio.NewReader(miR))
 	if err != nil {
 		err = fmt.Errorf("loading metainfo: %w", err)
 	}
