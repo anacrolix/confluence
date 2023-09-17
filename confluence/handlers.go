@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/anacrolix/missinggo/v2/httptoo"
+	"github.com/anacrolix/missinggo/v2/panicif"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -136,12 +138,18 @@ func eventHandler(w http.ResponseWriter, r *request) {
 
 func fileStateHandler(w http.ResponseWriter, r *request) {
 	path_ := r.URL.Query().Get(filePathQueryKey)
+	select {
+	case <-r.Context().Done():
+		http.Error(w, "request canceled", httptoo.StatusClientCancelledRequest)
+		return
+	case <-r.torrent.GotInfo():
+	}
 	f := torrentFileByPath(r.torrent, path_)
 	if f == nil {
 		http.Error(w, "file not found", http.StatusNotFound)
 		return
 	}
-	json.NewEncoder(w).Encode(f.State())
+	panicif.NotNil(json.NewEncoder(w).Encode(f.State()))
 }
 
 func (h *Handler) metainfoHandler(w http.ResponseWriter, r *http.Request) {
