@@ -19,7 +19,7 @@ import (
 	utp "github.com/anacrolix/go-libutp"
 	"github.com/anacrolix/missinggo/v2/filecache"
 	"github.com/anacrolix/missinggo/v2/resource"
-	"github.com/anacrolix/missinggo/x"
+	"github.com/anacrolix/missinggo/v2/x"
 	"github.com/anacrolix/publicip"
 	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/tagflag"

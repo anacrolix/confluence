@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/anacrolix/log"
-	"github.com/anacrolix/missinggo/httptoo"
+	"github.com/anacrolix/missinggo/v2/httptoo"
 )
 
 func (h *Handler) init() {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/anacrolix/dht/v2"
 	"github.com/anacrolix/log"
-	"github.com/anacrolix/missinggo/refclose"
+	"github.com/anacrolix/missinggo/v2/refclose"
 	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
