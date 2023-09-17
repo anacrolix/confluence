@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/anacrolix/squirrel"
 	"io"
 	"io/fs"
 	"log"
@@ -15,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anacrolix/squirrel"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
