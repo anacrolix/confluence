@@ -3,7 +3,7 @@ module github.com/anacrolix/confluence
 require (
 	github.com/anacrolix/dht/v2 v2.19.2-0.20221106044631-6ec4b0c54818
 	github.com/anacrolix/envpprof v1.2.1
-	github.com/anacrolix/go-libutp v1.2.0
+	github.com/anacrolix/go-libutp v1.3.1
 	github.com/anacrolix/log v0.13.2-0.20220711050817-613cb738ef30
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/missinggo/v2 v2.7.0
