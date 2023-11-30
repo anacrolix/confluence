@@ -1,6 +1,6 @@
 module github.com/anacrolix/confluence
 
-go 1.18
+go 1.20
 
 require (
 	github.com/anacrolix/dht/v2 v2.19.2-0.20221121215055-066ad8494444
