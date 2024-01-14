@@ -145,10 +145,13 @@ func (h *Handler) saveTorrentWhenGotInfo(t *torrent.Torrent) {
 }
 
 func (h *Handler) cachedMetaInfo(infoHash metainfo.Hash) (*metainfo.MetaInfo, error) {
-	p := path.Join(h.metainfoCacheDir(), infoHash.HexString()+".torrent")
 	miR, err := func() (io.ReadCloser, error) {
+		if h.MetainfoStorageInterface != nil {
+			return h.MetainfoStorageInterface.Get(infoHash)
+		}
+		key := path.Join(h.metainfoCacheDir(), infoHash.HexString()+".torrent")
 		if h.MetainfoStorage != nil {
-			b, err := h.MetainfoStorage.OpenPinnedReadOnly(p)
+			b, err := h.MetainfoStorage.OpenPinnedReadOnly(key)
 			if err != nil {
 				return nil, fmt.Errorf("opening from metainfo storage: %w", err)
 			}
@@ -160,7 +163,7 @@ func (h *Handler) cachedMetaInfo(infoHash metainfo.Hash) (*metainfo.MetaInfo, er
 				b,
 			}, nil
 		}
-		return os.Open(filepath.FromSlash(p))
+		return os.Open(filepath.FromSlash(key))
 	}()
 	if errors.Is(err, fs.ErrNotExist) || errors.Is(err, squirrel.ErrNotFound) {
 		return nil, nil

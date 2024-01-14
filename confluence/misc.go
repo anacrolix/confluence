@@ -2,6 +2,7 @@ package confluence
 
 import (
 	"bytes"
+	"github.com/anacrolix/torrent/types/infohash"
 	"io"
 	"net/http"
 	"os"
@@ -30,18 +31,22 @@ func (h *Handler) saveTorrentFile(t *torrent.Torrent) error {
 }
 
 // Take info-hash separately in case we don't have the info-bytes.
-func (h *Handler) saveMetaInfo(mi metainfo.MetaInfo, ih torrent.InfoHash) error {
+func (h *Handler) saveMetaInfo(mi metainfo.MetaInfo, ih infohash.T) error {
 	var miBuf bytes.Buffer
 	err := mi.Write(&miBuf)
 	if err != nil {
 		return err
 	}
-	p := path.Join(h.metainfoCacheDir(), ih.HexString()+".torrent")
-	if h.MetainfoStorage != nil {
-		return h.MetainfoStorage.Put(p, miBuf.Bytes())
+	if h.MetainfoStorageInterface != nil {
+		return h.MetainfoStorageInterface.Put(ih, miBuf.Bytes())
 	}
-	os.MkdirAll(filepath.Dir(p), 0o750)
-	f, err := os.OpenFile(filepath.FromSlash(p), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o660)
+	key := path.Join(h.metainfoCacheDir(), ih.HexString()+".torrent")
+	if h.MetainfoStorage != nil {
+		return h.MetainfoStorage.Put(key, miBuf.Bytes())
+	}
+	fp := filepath.FromSlash(key)
+	os.MkdirAll(filepath.Dir(fp), 0o750)
+	f, err := os.OpenFile(fp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o660)
 	if err != nil {
 		return err
 	}
