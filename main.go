@@ -17,6 +17,7 @@ import (
 	peer_store "github.com/anacrolix/dht/v2/peer-store"
 	_ "github.com/anacrolix/envpprof"
 	utp "github.com/anacrolix/go-libutp"
+	app "github.com/anacrolix/gostdapp"
 	"github.com/anacrolix/missinggo/v2/filecache"
 	"github.com/anacrolix/missinggo/v2/resource"
 	"github.com/anacrolix/missinggo/v2/x"
@@ -31,7 +32,6 @@ import (
 	sqliteStorage "github.com/anacrolix/torrent/storage/sqlite"
 	"github.com/arl/statsviz"
 	_ "github.com/honeycombio/honeycomb-opentelemetry-go"
-	"github.com/honeycombio/opentelemetry-go-contrib/launcher"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"zombiezen.com/go/sqlite"
 
@@ -229,14 +229,10 @@ func main() {
 	statsviz.RegisterDefault()
 	log.SetFlags(log.Flags() | log.Lshortfile)
 	tagflag.Parse(&flags)
-	err := mainErr()
-	if err != nil {
-		log.Printf("error in main: %v", err)
-		os.Exit(1)
-	}
+	app.RunContext(mainErr)
 }
 
-func mainErr() error {
+func mainErr(ctx context.Context) error {
 	torrentCallbacks := torrent.Callbacks{}
 	if flags.CollectCamouflageData {
 		sqliteConn, err := sqlite.OpenConn("file:confluence.db", 0)
@@ -343,11 +339,11 @@ func mainErr() error {
 		}()
 	}
 	registerNumTorrentsMetric(cl)
-	shutdownTelemetry, err := launcher.ConfigureOpenTelemetry()
+	cleanup, err := app.ConfigureOpenTelemetryForHoneycomb(ctx)
 	if err != nil {
-		err = fmt.Errorf("configuring open telemetry: %w", err)
-		log.Print(err)
+		log.Printf("error configuring open telemetry: %v", err)
+	} else {
+		defer cleanup()
 	}
-	defer shutdownTelemetry()
 	return http.Serve(l, otelhttp.NewHandler(h, "confluence"))
 }
