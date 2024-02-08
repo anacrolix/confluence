@@ -2,10 +2,11 @@ package confluence
 
 import (
 	"bytes"
-	"github.com/anacrolix/missinggo/v2/resource"
-	"github.com/anacrolix/torrent/types/infohash"
 	"io"
 	"path"
+
+	"github.com/anacrolix/missinggo/v2/resource"
+	"github.com/anacrolix/torrent/types/infohash"
 )
 
 type MetainfoStorage interface {
