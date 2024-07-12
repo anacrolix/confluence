@@ -1,6 +1,7 @@
 package confluence
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -351,7 +352,7 @@ func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 		err = fmt.Errorf("saving metainfo: %w", err)
 		log.Printf("error uploading: %v", err)
 	}
-	err = h.storeUploadPieces(&info, mi.HashInfoBytes(), files)
+	err = h.storeUploadPieces(r.Context(), &info, mi.HashInfoBytes(), files)
 	if err != nil {
 		err = fmt.Errorf("storing upload pieces: %w", err)
 		log.Printf("error uploading: %v", err)
@@ -379,8 +380,13 @@ func writeMultipartFiles(w io.Writer, fhs []*multipart.FileHeader) error {
 	return nil
 }
 
-func (h *Handler) storeUploadPieces(info *metainfo.Info, ih metainfo.Hash, files []*multipart.FileHeader) (err error) {
-	torrentStorage, err := h.Storage.OpenTorrent(info, ih)
+func (h *Handler) storeUploadPieces(
+	ctx context.Context,
+	info *metainfo.Info,
+	ih metainfo.Hash,
+	files []*multipart.FileHeader,
+) (err error) {
+	torrentStorage, err := h.Storage.OpenTorrent(ctx, info, ih)
 	if err != nil {
 		err = fmt.Errorf("opening storage for torrent: %w", err)
 		return
