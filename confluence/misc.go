@@ -2,14 +2,12 @@ package confluence
 
 import (
 	"bytes"
-	"io"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"time"
 
-	"github.com/anacrolix/missinggo/v2"
 	"github.com/anacrolix/missinggo/v2/httptoo"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -68,20 +66,9 @@ func ServeTorrent(w http.ResponseWriter, r *http.Request, t *torrent.Torrent) {
 }
 
 func ServeTorrentReader(w http.ResponseWriter, r *http.Request, tr torrent.Reader, name string) {
+	tr.SetContext(r.Context())
 	defer tr.Close()
-	rs := struct {
-		io.Reader
-		io.Seeker
-	}{
-		Reader: missinggo.ContextedReader{
-			R: tr,
-			// From Go 1.8, the Request Context is done when the client goes
-			// away.
-			Ctx: r.Context(),
-		},
-		Seeker: tr,
-	}
-	http.ServeContent(w, r, name, time.Time{}, rs)
+	http.ServeContent(w, r, name, time.Time{}, tr)
 }
 
 func ServeFile(w http.ResponseWriter, r *http.Request, t *torrent.Torrent, _path string) {
